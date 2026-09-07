@@ -107,7 +107,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Miraprint')),
+      appBar: AppBar(
+        title: const Text('Miraprint'),
+        backgroundColor: Colors.amber,
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 640),
