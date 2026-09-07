@@ -24,7 +24,6 @@ dependencies:
   image: ^4.9.2
   barcode: ^2.2.9
   window_manager: ^0.5.2
-  package_info_plus: ^10.2.1
 
 dev_dependencies:
   flutter_test:

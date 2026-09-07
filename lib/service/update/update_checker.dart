@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/app_constants.dart';
+import '../../core/app_version.dart';
 import '../../model/update/update_info.dart';
 
 Future<UpdateInfo?> checkForUpdate() async {
@@ -16,10 +16,7 @@ Future<UpdateInfo?> checkForUpdate() async {
   final json = jsonDecode(response.body) as Map<String, dynamic>;
   final info = UpdateInfo.fromJson(json);
 
-  final packageInfo = await PackageInfo.fromPlatform();
-  final currentVersion = packageInfo.version;
-
-  if (_isNewer(info.version, currentVersion)) {
+  if (_isNewer(info.version, kAppVersion)) {
     return info;
   }
   return null;
