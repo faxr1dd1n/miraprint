@@ -15,6 +15,10 @@ import 'package:miraprint/ui/home/widget/receipt_preview.dart';
 import 'package:miraprint/ui/home/widget/server_status_widget.dart';
 import 'package:printing/printing.dart';
 
+import 'package:miraprint/model/update/update_info.dart';
+import 'package:miraprint/service/update/update_checker.dart';
+import 'package:miraprint/service/update/update_downloader.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -23,6 +27,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  UpdateInfo? _updateInfo;
+  bool _isDownloadingUpdate = false;
   List<Printer> _printers = [];
   Printer? _selectedPrinter;
   bool _isLoadingPrinters = false;
@@ -45,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     context.read<ServerBloc>().add(const ServerStartRequested());
     _loadPrinters();
+    _checkForUpdate();
   }
 
   Future<void> _loadPrinters() async {
@@ -86,6 +93,32 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _checkForUpdate() async {
+    try {
+      final info = await checkForUpdate();
+      if (mounted) setState(() => _updateInfo = info);
+    } catch (_) {
+      // test bosqichida server ishlamasa, jim o'tkazamiz
+    }
+  }
+
+  Future<void> _downloadAndInstallUpdate() async {
+    final info = _updateInfo;
+    if (info == null) return;
+
+    setState(() => _isDownloadingUpdate = true);
+    try {
+      final filePath = await downloadInstaller(info.downloadUrl);
+      await launchInstaller(filePath);
+    } catch (e) {
+      setState(
+        () => _testPrintResult = (success: false, message: e.toString()),
+      );
+    } finally {
+      if (mounted) setState(() => _isDownloadingUpdate = false);
+    }
+  }
+
   ReceiptData _sampleReceipt() {
     return const ReceiptData(
       logo: 'https://mirasoft.io/assets/i/logo.jpg',
@@ -119,6 +152,39 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (_updateInfo != null) ...[
+                  _SectionCard(
+                    title: 'Yangilanish mavjud',
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text('Yangi versiya: ${_updateInfo!.version}'),
+                        ),
+                        FilledButton.icon(
+                          onPressed: _isDownloadingUpdate
+                              ? null
+                              : _downloadAndInstallUpdate,
+                          icon: _isDownloadingUpdate
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.download),
+                          label: Text(
+                            _isDownloadingUpdate
+                                ? 'Yuklanmoqda...'
+                                : 'Yangilash',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
                 _SectionCard(
                   title: 'Server holati',
                   child: const ServerStatusWidget(),
