@@ -20,6 +20,12 @@ jobs:
 
       - run: flutter build windows --release
 
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Build installer
+        run: iscc windows\installer\miraprint.iss
+
       - uses: actions/upload-artifact@v4
         with:
           name: miraprint-windows

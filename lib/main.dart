@@ -3,10 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:miraprint/bloc/server_bloc/server_bloc.dart';
 import 'package:miraprint/core/app_logger.dart';
 import 'package:miraprint/ui/home/screen/home_screen.dart';
+import 'package:window_manager/window_manager.dart';
 import 'service/http/http_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   setupLogging();
+  await windowManager.ensureInitialized();
+  const windowOptions = WindowOptions(title: 'Miraprint', center: true);
+  windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.maximize();
+    await windowManager.show();
+    await windowManager.focus();
+  });
   runApp(const MyApp());
 }
 
