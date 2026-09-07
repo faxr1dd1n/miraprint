@@ -142,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Miraprint'),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.amber,
       ),
       body: Center(
         child: ConstrainedBox(
