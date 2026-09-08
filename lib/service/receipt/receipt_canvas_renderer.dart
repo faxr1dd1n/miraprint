@@ -22,9 +22,11 @@ double _spacingMultiplier(String spacing) {
 
 /// `key == "date_format"` header'ining qiymati serverdan tayyor matn
 /// ("08.09.2026, 12:02:38", ya'ni "dd.MM.yyyy, HH:mm:ss") sifatida keladi —
-/// shu matnni `layout.date_format`ga qarab qisqartiramiz:
+/// shu matnni `layout.date_format`ga qarab qisqartiramiz (Receipt.vue'dagi
+/// `moment(...)` formatlariga mos):
 /// - 'date' -> faqat sana ("08.09.2026")
-/// - 'short' / 'cashier' -> sana va vaqt, soniyasiz ("08.09.2026, 12:02")
+/// - 'short' -> sana va vaqt, vergul bilan, soniyasiz ("08.09.2026, 12:02")
+/// - 'cashier' -> sana va vaqt, vergulsiz, probel bilan ("08.09.2026 12:02")
 String _formatDateValue(String raw, String dateFormat) {
   final parts = raw.split(',');
   final datePart = parts.first.trim();
@@ -35,7 +37,7 @@ String _formatDateValue(String raw, String dateFormat) {
   final shortTime = timeSegments.length >= 2
       ? '${timeSegments[0]}:${timeSegments[1]}'
       : parts[1].trim();
-  return '$datePart, $shortTime';
+  return dateFormat == 'cashier' ? '$datePart $shortTime' : '$datePart, $shortTime';
 }
 
 double _renderContent(
@@ -52,19 +54,20 @@ double _renderContent(
     String left,
     String right, {
     required double fontSize,
-    bool bold = false,
+    bool boldLeft = false,
+    bool boldRight = false,
   }) {
-    final style = TextStyle(
+    TextStyle style(bool bold) => TextStyle(
       color: const Color(0xFF000000),
       fontSize: fontSize,
       fontWeight: bold ? FontWeight.bold : FontWeight.normal,
     );
     final leftPainter = TextPainter(
-      text: TextSpan(text: left, style: style),
+      text: TextSpan(text: left, style: style(boldLeft)),
       textDirection: TextDirection.ltr,
     )..layout(maxWidth: _printWidth * 0.65);
     final rightPainter = TextPainter(
-      text: TextSpan(text: right, style: style),
+      text: TextSpan(text: right, style: style(boldRight)),
       textDirection: TextDirection.ltr,
     )..layout();
 
@@ -138,13 +141,26 @@ double _renderContent(
         : header.val;
 
     if (spaceBetweenLayout) {
-      y += paintRow(header.title, displayVal, fontSize: 24);
+      y += paintRow(header.title, displayVal, fontSize: 24, boldLeft: true);
       y += 4 * spacing;
     } else {
+      // Receipt.vue: <strong>{{ title }}:</strong><span>{{ val }}</span>
       final painter = TextPainter(
         text: TextSpan(
-          text: '${header.title}: $displayVal',
-          style: const TextStyle(color: Color(0xFF000000), fontSize: 24),
+          children: [
+            TextSpan(
+              text: '${header.title}: ',
+              style: const TextStyle(
+                color: Color(0xFF000000),
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextSpan(
+              text: displayVal,
+              style: const TextStyle(color: Color(0xFF000000), fontSize: 24),
+            ),
+          ],
         ),
         textDirection: TextDirection.ltr,
       )..layout(maxWidth: _printWidth);
@@ -174,6 +190,7 @@ double _renderContent(
       '${item.qty}шт x ${item.price}',
       item.totalPrice,
       fontSize: 24,
+      boldRight: true,
     );
     y += 4 * spacing;
 
@@ -186,11 +203,14 @@ double _renderContent(
   }
 
   for (final total in receipt.totals) {
+    // Receipt.vue: `.total { font-weight: bold }` — hamma totals qatori
+    // qalin, `big` (`.total-xl`) faqat shriftni kattalashtiradi.
     y += paintRow(
       total.title,
       total.val,
       fontSize: total.big ? 32 : 24,
-      bold: total.big,
+      boldLeft: true,
+      boldRight: true,
     );
     y += (total.big ? 10 : 4) * spacing;
   }
@@ -248,17 +268,23 @@ Future<img.Image?> renderFooterImage(ReceiptSettings? settings) async {
 
   final spacing = _spacingMultiplier(settings?.spacing ?? 'normal');
   final gap = 10 * spacing;
+  // Receipt.vue `.thanks` klassidan: letter-spacing: 1px; padding-bottom: 5px.
+  const bottomPadding = 5.0;
 
   final painter = TextPainter(
     text: TextSpan(
       text: footerNotice,
-      style: const TextStyle(color: Color(0xFF000000), fontSize: 20),
+      style: const TextStyle(
+        color: Color(0xFF000000),
+        fontSize: 20,
+        letterSpacing: 1,
+      ),
     ),
     textAlign: TextAlign.center,
     textDirection: TextDirection.ltr,
   )..layout(maxWidth: _printWidth);
 
-  final totalHeight = gap + 2 + gap + painter.height;
+  final totalHeight = gap + 2 + gap + painter.height + bottomPadding;
 
   return _rasterize(totalHeight, (canvas) {
     canvas.drawRect(
