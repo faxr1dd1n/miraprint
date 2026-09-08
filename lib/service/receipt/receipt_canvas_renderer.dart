@@ -20,7 +20,7 @@ double _spacingMultiplier(String spacing) {
   }
 }
 
-/// `key == "date"` header'ining qiymati serverdan tayyor matn
+/// `key == "date_format"` header'ining qiymati serverdan tayyor matn
 /// ("08.09.2026, 12:02:38", ya'ni "dd.MM.yyyy, HH:mm:ss") sifatida keladi —
 /// shu matnni `layout.date_format`ga qarab qisqartiramiz:
 /// - 'date' -> faqat sana ("08.09.2026")
@@ -90,7 +90,7 @@ double _renderContent(
 
   HeaderItem? dateHeader;
   for (final header in receipt.headers) {
-    if (header.key == 'date') {
+    if (header.key == 'date_format') {
       dateHeader = header;
       break;
     }
@@ -131,9 +131,9 @@ double _renderContent(
   }
 
   for (final header in receipt.headers) {
-    if (dateFormat == 'cashier' && header.key == 'date') continue;
+    if (dateFormat == 'cashier' && header.key == 'date_format') continue;
 
-    final displayVal = header.key == 'date'
+    final displayVal = header.key == 'date_format'
         ? _formatDateValue(header.val, dateFormat)
         : header.val;
 
@@ -195,42 +195,28 @@ double _renderContent(
     y += (total.big ? 10 : 4) * spacing;
   }
 
-  final footerNotice = settings?.texts.footerNotice;
-  if (footerNotice != null && footerNotice.isNotEmpty) {
-    y += 10 * spacing;
-    final painter = TextPainter(
-      text: TextSpan(
-        text: footerNotice,
-        style: const TextStyle(color: Color(0xFF000000), fontSize: 20),
-      ),
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: _printWidth);
-    if (canvas != null) {
-      painter.paint(canvas, Offset((_printWidth - painter.width) / 2, y));
-    }
-    y += painter.height;
-  }
-
   return y;
 }
 
-Future<img.Image> renderReceiptTextImage(
-  ReceiptData receipt, {
-  ReceiptSettings? settings,
-}) async {
-  final totalHeight = _renderContent(null, receipt, settings: settings);
-
+/// Oq fonli, berilgan balandlikdagi bo'sh canvas ustiga `draw` chizadi va
+/// natijani `img.Image`ga aylantiradi. Kirill matn kerak bo'lgan har qanday
+/// blok (asosiy kontent, footer) shu orqali rasm sifatida chiqariladi —
+/// sabab: bu printerda ESC/POS matn rejimida kirill buziladi (`PLAN.md`,
+/// Bosqich 5).
+Future<img.Image> _rasterize(
+  double height,
+  void Function(Canvas canvas) draw,
+) async {
   final recorder = ui.PictureRecorder();
   final canvas = Canvas(recorder);
   canvas.drawRect(
-    Rect.fromLTWH(0, 0, _printWidth, totalHeight),
+    Rect.fromLTWH(0, 0, _printWidth, height),
     Paint()..color = const Color(0xFFFFFFFF),
   );
-  _renderContent(canvas, receipt, settings: settings);
+  draw(canvas);
 
   final picture = recorder.endRecording();
-  final uiImage = await picture.toImage(_printWidth.ceil(), totalHeight.ceil());
+  final uiImage = await picture.toImage(_printWidth.ceil(), height.ceil());
   final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.rawRgba);
   final bytes = byteData!.buffer.asUint8List();
 
@@ -241,4 +227,44 @@ Future<img.Image> renderReceiptTextImage(
     numChannels: 4,
     order: img.ChannelOrder.rgba,
   );
+}
+
+Future<img.Image> renderReceiptTextImage(
+  ReceiptData receipt, {
+  ReceiptSettings? settings,
+}) {
+  final totalHeight = _renderContent(null, receipt, settings: settings);
+  return _rasterize(
+    totalHeight,
+    (canvas) => _renderContent(canvas, receipt, settings: settings),
+  );
+}
+
+/// Barcode'dan keyin chiqadigan chiziq + `texts.footer_notice` matni.
+/// Matn bo'lmasa (`null`/bo'sh) `null` qaytadi — hech narsa chizilmaydi.
+Future<img.Image?> renderFooterImage(ReceiptSettings? settings) async {
+  final footerNotice = settings?.texts.footerNotice;
+  if (footerNotice == null || footerNotice.isEmpty) return null;
+
+  final spacing = _spacingMultiplier(settings?.spacing ?? 'normal');
+  final gap = 10 * spacing;
+
+  final painter = TextPainter(
+    text: TextSpan(
+      text: footerNotice,
+      style: const TextStyle(color: Color(0xFF000000), fontSize: 20),
+    ),
+    textAlign: TextAlign.center,
+    textDirection: TextDirection.ltr,
+  )..layout(maxWidth: _printWidth);
+
+  final totalHeight = gap + 2 + gap + painter.height;
+
+  return _rasterize(totalHeight, (canvas) {
+    canvas.drawRect(
+      Rect.fromLTWH(0, gap, _printWidth, 2),
+      Paint()..color = const Color(0xFF000000),
+    );
+    painter.paint(canvas, Offset((_printWidth - painter.width) / 2, gap + 2 + gap));
+  });
 }

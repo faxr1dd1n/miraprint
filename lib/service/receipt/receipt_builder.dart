@@ -34,6 +34,12 @@ Future<List<int>> buildReceiptBytes(
     bytes += generator.barcode(Barcode.code128(receipt.barcode.split('')));
   }
 
+  final footerImage = await renderFooterImage(settings);
+  if (footerImage != null) {
+    bytes += generator.emptyLines(1);
+    bytes += generator.image(footerImage);
+  }
+
   bytes += generator.cut();
 
   return bytes;

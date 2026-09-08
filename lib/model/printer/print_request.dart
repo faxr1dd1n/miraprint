@@ -14,15 +14,19 @@ class PrintRequest {
   final ReceiptSettings? receiptSettings;
 
   factory PrintRequest.fromJson(Map<String, dynamic> json) {
+    // Sayt "checkSettings" nomi bilan yuboradi; "receipt_settings" eski
+    // nom sifatida orqaga moslik uchun saqlanadi.
+    final settingsJson =
+        json['checkSettings'] as Map<String, dynamic>? ??
+        json['receipt_settings'] as Map<String, dynamic>?;
+
     return PrintRequest(
       printer: PrinterInfo.fromJson(
         json['printer'] as Map<String, dynamic>? ?? {},
       ),
       check: ReceiptData.fromJson(json['check'] as Map<String, dynamic>? ?? {}),
-      receiptSettings: json['receipt_settings'] != null
-          ? ReceiptSettings.fromJson(
-              json['receipt_settings'] as Map<String, dynamic>,
-            )
+      receiptSettings: settingsJson != null
+          ? ReceiptSettings.fromJson(settingsJson)
           : null,
     );
   }
