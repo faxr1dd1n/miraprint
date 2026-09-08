@@ -3,12 +3,50 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 
+import '../../model/receipt/header_item.dart';
 import '../../model/receipt/receipt_data.dart';
+import '../../model/receipt/receipt_settings.dart';
 
 const double _printWidth = 576;
 
-double _renderContent(Canvas? canvas, ReceiptData receipt) {
+double _spacingMultiplier(String spacing) {
+  switch (spacing) {
+    case 'compact':
+      return 0.6;
+    case 'spacious':
+      return 1.5;
+    default:
+      return 1.0;
+  }
+}
+
+/// `key == "date"` header'ining qiymati serverdan tayyor matn
+/// ("08.09.2026, 12:02:38", ya'ni "dd.MM.yyyy, HH:mm:ss") sifatida keladi —
+/// shu matnni `layout.date_format`ga qarab qisqartiramiz:
+/// - 'date' -> faqat sana ("08.09.2026")
+/// - 'short' / 'cashier' -> sana va vaqt, soniyasiz ("08.09.2026, 12:02")
+String _formatDateValue(String raw, String dateFormat) {
+  final parts = raw.split(',');
+  final datePart = parts.first.trim();
+  if (dateFormat == 'date') return datePart;
+
+  if (parts.length < 2) return raw;
+  final timeSegments = parts[1].trim().split(':');
+  final shortTime = timeSegments.length >= 2
+      ? '${timeSegments[0]}:${timeSegments[1]}'
+      : parts[1].trim();
+  return '$datePart, $shortTime';
+}
+
+double _renderContent(
+  Canvas? canvas,
+  ReceiptData receipt, {
+  ReceiptSettings? settings,
+}) {
   double y = 0;
+  final spacing = _spacingMultiplier(settings?.spacing ?? 'normal');
+  final spaceBetweenLayout = settings?.layout.fieldsLayout == 'space-between';
+  final dateFormat = settings?.layout.dateFormat ?? 'date';
 
   double paintRow(
     String left,
@@ -42,12 +80,35 @@ double _renderContent(Canvas? canvas, ReceiptData receipt) {
   }
 
   void hr({double before = 6, double after = 10}) {
-    y += before;
+    y += before * spacing;
     canvas?.drawRect(
       Rect.fromLTWH(0, y, _printWidth, 2),
       Paint()..color = const Color(0xFF000000),
     );
-    y += 2 + after;
+    y += 2 + after * spacing;
+  }
+
+  HeaderItem? dateHeader;
+  for (final header in receipt.headers) {
+    if (header.key == 'date') {
+      dateHeader = header;
+      break;
+    }
+  }
+
+  if (dateFormat == 'cashier' && dateHeader != null) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: _formatDateValue(dateHeader.val, dateFormat),
+        style: const TextStyle(color: Color(0xFF000000), fontSize: 22),
+      ),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: _printWidth);
+    if (canvas != null) {
+      painter.paint(canvas, Offset((_printWidth - painter.width) / 2, y));
+    }
+    y += painter.height + 8 * spacing;
   }
 
   if (receipt.currentNumber.isNotEmpty) {
@@ -66,25 +127,30 @@ double _renderContent(Canvas? canvas, ReceiptData receipt) {
     if (canvas != null) {
       painter.paint(canvas, Offset((_printWidth - painter.width) / 2, y));
     }
-    y += painter.height + 12;
+    y += painter.height + 12 * spacing;
   }
 
   for (final header in receipt.headers) {
-    final painter = TextPainter(
-      text: TextSpan(
-        text: '${header.title}: ${header.val}',
-        style: TextStyle(
-          color: const Color(0xFF000000),
-          fontSize: 24,
-          fontWeight: header.title == 'Компания'
-              ? FontWeight.bold
-              : FontWeight.normal,
+    if (dateFormat == 'cashier' && header.key == 'date') continue;
+
+    final displayVal = header.key == 'date'
+        ? _formatDateValue(header.val, dateFormat)
+        : header.val;
+
+    if (spaceBetweenLayout) {
+      y += paintRow(header.title, displayVal, fontSize: 24);
+      y += 4 * spacing;
+    } else {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: '${header.title}: $displayVal',
+          style: const TextStyle(color: Color(0xFF000000), fontSize: 24),
         ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: _printWidth);
-    if (canvas != null) painter.paint(canvas, Offset(0, y));
-    y += painter.height + 4;
+        textDirection: TextDirection.ltr,
+      )..layout(maxWidth: _printWidth);
+      if (canvas != null) painter.paint(canvas, Offset(0, y));
+      y += painter.height + 4 * spacing;
+    }
   }
 
   hr();
@@ -102,18 +168,18 @@ double _renderContent(Canvas? canvas, ReceiptData receipt) {
       textDirection: TextDirection.ltr,
     )..layout(maxWidth: _printWidth);
     if (canvas != null) namePainter.paint(canvas, Offset(0, y));
-    y += namePainter.height + 6;
+    y += namePainter.height + 6 * spacing;
 
     y += paintRow(
       '${item.qty}шт x ${item.price}',
       item.totalPrice,
       fontSize: 24,
     );
-    y += 4;
+    y += 4 * spacing;
 
     if (item.discountText != null && item.discountPrice != null) {
       y += paintRow(item.discountText!, item.discountPrice!, fontSize: 22);
-      y += 4;
+      y += 4 * spacing;
     }
 
     hr();
@@ -126,14 +192,34 @@ double _renderContent(Canvas? canvas, ReceiptData receipt) {
       fontSize: total.big ? 32 : 24,
       bold: total.big,
     );
-    y += total.big ? 10 : 4;
+    y += (total.big ? 10 : 4) * spacing;
+  }
+
+  final footerNotice = settings?.texts.footerNotice;
+  if (footerNotice != null && footerNotice.isNotEmpty) {
+    y += 10 * spacing;
+    final painter = TextPainter(
+      text: TextSpan(
+        text: footerNotice,
+        style: const TextStyle(color: Color(0xFF000000), fontSize: 20),
+      ),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: _printWidth);
+    if (canvas != null) {
+      painter.paint(canvas, Offset((_printWidth - painter.width) / 2, y));
+    }
+    y += painter.height;
   }
 
   return y;
 }
 
-Future<img.Image> renderReceiptTextImage(ReceiptData receipt) async {
-  final totalHeight = _renderContent(null, receipt);
+Future<img.Image> renderReceiptTextImage(
+  ReceiptData receipt, {
+  ReceiptSettings? settings,
+}) async {
+  final totalHeight = _renderContent(null, receipt, settings: settings);
 
   final recorder = ui.PictureRecorder();
   final canvas = Canvas(recorder);
@@ -141,7 +227,7 @@ Future<img.Image> renderReceiptTextImage(ReceiptData receipt) async {
     Rect.fromLTWH(0, 0, _printWidth, totalHeight),
     Paint()..color = const Color(0xFFFFFFFF),
   );
-  _renderContent(canvas, receipt);
+  _renderContent(canvas, receipt, settings: settings);
 
   final picture = recorder.endRecording();
   final uiImage = await picture.toImage(_printWidth.ceil(), totalHeight.ceil());

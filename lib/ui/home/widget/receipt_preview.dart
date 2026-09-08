@@ -35,10 +35,8 @@ class ReceiptPreview extends StatelessWidget {
               child: Image.network(
                 receipt.logo,
                 height: 80,
-                errorBuilder: (context, error, stackTrace) => const Text(
-                  '(logo yuklanmadi)',
-                  style: _mono,
-                ),
+                errorBuilder: (context, error, stackTrace) =>
+                    const Text('(logo yuklanmadi)', style: _mono),
               ),
             ),
             const SizedBox(height: 8),

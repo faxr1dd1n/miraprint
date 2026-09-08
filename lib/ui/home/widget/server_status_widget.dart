@@ -2,31 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/server_bloc/server_bloc.dart';
+import '../../../core/app_colors.dart';
 
 class ServerStatusWidget extends StatelessWidget {
   const ServerStatusWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return BlocBuilder<ServerBloc, ServerState>(
       builder: (context, state) {
         final (color, icon, label) = switch (state.status) {
           ServerStatus.initial => (
-            Colors.grey,
+            colorScheme.onSurfaceVariant,
             Icons.circle_outlined,
             'Kutilmoqda',
           ),
           ServerStatus.starting => (
-            Colors.orange,
+            AppColors.warning,
             Icons.sync,
             'Ishga tushmoqda...',
           ),
           ServerStatus.running => (
-            Colors.green,
+            AppColors.success,
             Icons.check_circle,
             'Ishlayapti',
           ),
-          ServerStatus.error => (Colors.red, Icons.error, 'Xato'),
+          ServerStatus.error => (colorScheme.error, Icons.error, 'Xato'),
         };
 
         return Row(
@@ -47,7 +50,7 @@ class ServerStatusWidget extends StatelessWidget {
               Expanded(
                 child: Text(
                   state.errorMessage!,
-                  style: const TextStyle(color: Colors.red, fontSize: 14),
+                  style: TextStyle(color: colorScheme.error, fontSize: 14),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

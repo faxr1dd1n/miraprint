@@ -14,7 +14,10 @@ Future<Response> handlePostPrint(Request request) async {
     final printRequest = PrintRequest.fromJson(json);
     lastReceiptNotifier.value = printRequest.check;
 
-    final bytes = await buildReceiptBytes(printRequest.check);
+    final bytes = await buildReceiptBytes(
+      printRequest.check,
+      settings: printRequest.receiptSettings,
+    );
     final connection = PrinterConnection.forPlatform(printRequest.printer.name);
     await connection.sendRaw(bytes);
     final response = PrintResponse(success: true, message: "Chek chop etildi");

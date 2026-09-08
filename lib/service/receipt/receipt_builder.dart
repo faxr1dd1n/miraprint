@@ -1,10 +1,14 @@
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 
 import '../../model/receipt/receipt_data.dart';
+import '../../model/receipt/receipt_settings.dart';
 import 'logo_loader.dart';
 import 'receipt_canvas_renderer.dart';
 
-Future<List<int>> buildReceiptBytes(ReceiptData receipt) async {
+Future<List<int>> buildReceiptBytes(
+  ReceiptData receipt, {
+  ReceiptSettings? settings,
+}) async {
   final profile = await CapabilityProfile.load();
   final generator = Generator(PaperSize.mm80, profile);
   List<int> bytes = [];
@@ -19,7 +23,10 @@ Future<List<int>> buildReceiptBytes(ReceiptData receipt) async {
     }
   }
 
-  final contentImage = await renderReceiptTextImage(receipt);
+  final contentImage = await renderReceiptTextImage(
+    receipt,
+    settings: settings,
+  );
   bytes += generator.image(contentImage);
 
   if (receipt.barcode.isNotEmpty) {

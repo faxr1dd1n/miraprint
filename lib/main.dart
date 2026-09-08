@@ -37,38 +37,71 @@ class MyApp extends StatelessWidget {
 
   ThemeData _buildTheme() {
     const seedColor = Color(0xFF2563EB);
+    const borderRadius = 12.0;
+    final radius = BorderRadius.circular(borderRadius);
+    final colorScheme = ColorScheme.fromSeed(seedColor: seedColor);
 
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(seedColor: seedColor),
+      colorScheme: colorScheme,
       scaffoldBackgroundColor: const Color(0xFFF5F7FA),
       appBarTheme: AppBarTheme(
-        backgroundColor: seedColor,
-        foregroundColor: Colors.white,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         centerTitle: true,
         elevation: 0,
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           fontSize: 26,
           fontWeight: FontWeight.w600,
-          color: Colors.white,
+          color: colorScheme.onPrimary,
         ),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
         color: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: radius),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: radius),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: radius),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: radius),
+          side: BorderSide(color: colorScheme.outline),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: radius),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        border: OutlineInputBorder(borderRadius: radius),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        filled: true,
+        fillColor: Colors.white,
         isDense: true,
+      ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        menuStyle: MenuStyle(
+          backgroundColor: const WidgetStatePropertyAll(Colors.white),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          elevation: const WidgetStatePropertyAll(3),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: radius),
+          ),
+        ),
       ),
     );
   }
