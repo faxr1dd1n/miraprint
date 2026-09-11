@@ -8,7 +8,6 @@ import 'package:miraprint/model/receipt/total_item.dart';
 import 'package:miraprint/service/printer/mac_printer_lister.dart';
 import 'package:miraprint/service/printer/printer_connection.dart';
 import 'package:miraprint/service/receipt/receipt_builder.dart';
-import 'package:miraprint/ui/home/widget/receipt_preview.dart';
 import 'package:miraprint/ui/home/widget/result_banner.dart';
 import 'package:miraprint/ui/home/widget/section_card.dart';
 import 'package:printing/printing.dart';
@@ -70,18 +69,6 @@ class _PrinterSectionState extends State<PrinterSection> {
     } finally {
       setState(() => _isTestPrinting = false);
     }
-  }
-
-  void _showReceiptPreview() {
-    showDialog<void>(
-      context: context,
-      builder: (context) => Dialog(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ReceiptPreview(receipt: _sampleReceipt()),
-        ),
-      ),
-    );
   }
 
   ReceiptData _sampleReceipt() {
@@ -172,12 +159,6 @@ class _PrinterSectionState extends State<PrinterSection> {
               ),
             ),
           ],
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: _showReceiptPreview,
-            icon: const Icon(Icons.receipt_long),
-            label: const Text("Chekni ko'rish", style: TextStyle(fontSize: 18)),
-          ),
           if (_testPrintResult != null) ...[
             const SizedBox(height: 20),
             ResultBanner(result: _testPrintResult!),

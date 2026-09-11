@@ -19,7 +19,6 @@ class PrintRequest {
     final settingsJson =
         json['checkSettings'] as Map<String, dynamic>? ??
         json['receipt_settings'] as Map<String, dynamic>?;
-
     return PrintRequest(
       printer: PrinterInfo.fromJson(
         json['printer'] as Map<String, dynamic>? ?? {},

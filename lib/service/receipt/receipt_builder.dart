@@ -13,12 +13,19 @@ Future<List<int>> buildReceiptBytes(
   final generator = Generator(PaperSize.mm80, profile);
   List<int> bytes = [];
 
-  bytes += generator.reset();
+  // Printer sovuq holatda (endigina yoqilgan yoki ilova birinchi marta
+  // ulanayotgan) bo'lsa, oqim boshidagi baytlar yo'qolib/buzilib qolishi
+  // mumkin (logo ustida "?" va bo'sh qatorlar shundan). ESC @ ni bir necha
+  // marta takrorlab "isitish" bilan haqiqiy tarkib himoyalanadi — bu
+  // komanda hech narsa chop etmaydi, faqat printerni reset qiladi.
+  for (var i = 0; i < 5; i++) {
+    bytes += generator.reset();
+  }
 
   if (receipt.logo.isNotEmpty) {
     final logoImage = await loadLogoImage(receipt.logo);
     if (logoImage != null) {
-      bytes += generator.image(logoImage);
+      bytes += generator.imageRaster(logoImage);
       bytes += generator.emptyLines(1);
     }
   }
@@ -27,17 +34,20 @@ Future<List<int>> buildReceiptBytes(
     receipt,
     settings: settings,
   );
-  bytes += generator.image(contentImage);
+  bytes += generator.imageRaster(contentImage);
 
   if (receipt.barcode.isNotEmpty) {
     bytes += generator.emptyLines(1);
-    bytes += generator.barcode(Barcode.code128(receipt.barcode.split('')));
+    bytes += generator.barcode(
+      Barcode.code128(receipt.barcode.split('')),
+      textPos: BarcodeText.none,
+    );
   }
 
   final footerImage = await renderFooterImage(settings);
   if (footerImage != null) {
     bytes += generator.emptyLines(1);
-    bytes += generator.image(footerImage);
+    bytes += generator.imageRaster(footerImage);
   }
 
   bytes += generator.cut();

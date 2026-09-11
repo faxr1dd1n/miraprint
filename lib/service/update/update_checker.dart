@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -6,6 +7,13 @@ import '../../core/app_constants.dart';
 import '../../core/app_version.dart';
 import '../../model/update/update_info.dart';
 
+/// `version.json` ikkala platforma uchun bitta faylda, alohida bo'limlarda
+/// beriladi (Windows `.exe`, macOS `.dmg`/`.pkg` — fayl turi boshqa bo'lgani
+/// uchun bitta umumiy `download_url` yetmaydi):
+/// ```json
+/// {"windows": {"version": "1.0.4", "download_url": "...exe"},
+///  "macos":   {"version": "1.0.3", "download_url": "...dmg"}}
+/// ```
 Future<UpdateInfo?> checkForUpdate() async {
   final response = await http
       .get(Uri.parse('$kUpdateServerUrl/version.json'))
@@ -14,7 +22,12 @@ Future<UpdateInfo?> checkForUpdate() async {
   if (response.statusCode != 200) return null;
 
   final json = jsonDecode(response.body) as Map<String, dynamic>;
-  final info = UpdateInfo.fromJson(json);
+  final platformKey = Platform.isMacOS ? 'macos' : 'windows';
+  final platformJson = json[platformKey] as Map<String, dynamic>?;
+  if (platformJson == null) return null;
+
+  final info = UpdateInfo.fromJson(platformJson);
+  if (info.version.isEmpty || info.downloadUrl.isEmpty) return null;
 
   if (_isNewer(info.version, kAppVersion)) {
     return info;

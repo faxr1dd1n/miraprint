@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:miraprint/bloc/server_bloc/server_bloc.dart';
+import 'package:miraprint/core/app_version.dart';
 import 'package:miraprint/ui/home/widget/last_receipt_section.dart';
 import 'package:miraprint/ui/home/widget/printer_section.dart';
 import 'package:miraprint/ui/home/widget/section_card.dart';
@@ -24,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Miraprint')),
+      appBar: AppBar(title: const Text('Miraprint v$kAppVersion')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 640),

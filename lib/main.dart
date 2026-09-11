@@ -8,7 +8,7 @@ import 'service/http/http_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  setupLogging();
+  await setupLogging();
   await windowManager.ensureInitialized();
   const windowOptions = WindowOptions(title: 'Miraprint', center: true);
   windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -36,15 +36,16 @@ class MyApp extends StatelessWidget {
   }
 
   ThemeData _buildTheme() {
-    const seedColor = Color(0xFF2563EB);
     const borderRadius = 12.0;
     final radius = BorderRadius.circular(borderRadius);
-    final colorScheme = ColorScheme.fromSeed(seedColor: seedColor);
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: const Color.fromARGB(255, 11, 105, 255),
+    );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: const Color(0xFFF5F7FA),
+      scaffoldBackgroundColor: const Color.fromARGB(255, 241, 246, 255),
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
