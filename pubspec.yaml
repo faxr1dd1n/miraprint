@@ -25,6 +25,7 @@ dependencies:
   barcode: ^2.2.9
   window_manager: ^0.5.2
   path_provider: ^2.1.6
+  tray_manager: ^0.5.3
 
 dev_dependencies:
   flutter_test:
@@ -46,6 +47,8 @@ flutter:
 
   assets:
     - assets/miraprint_logo.png
+    - assets/tray_icon.png
+    - assets/tray_icon.ico
 
   # fonts:
   #   - family: Schyler

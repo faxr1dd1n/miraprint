@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   printing
   screen_retriever_windows
+  tray_manager
   window_manager
 )
 

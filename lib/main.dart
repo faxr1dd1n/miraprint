@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:miraprint/bloc/server_bloc/server_bloc.dart';
 import 'package:miraprint/core/app_logger.dart';
+import 'package:miraprint/service/window/app_window_service.dart';
 import 'package:miraprint/ui/home/screen/home_screen.dart';
 import 'package:window_manager/window_manager.dart';
 import 'service/http/http_service.dart';
@@ -9,13 +10,18 @@ import 'service/http/http_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupLogging();
+
+  // pos_app'dagi kabi: oyna o'lchami va uni ko'rsatish butunlay native
+  // tomonga (macOS — MainFlutterWindow.swift, NSScreen.main.visibleFrame)
+  // qoldirilgan — bu yerda `show()`/`maximize()` chaqirilmaydi, chunki
+  // window_manager'ning o'z ichidagi "isMaximized bo'lsa unmaximize qil"
+  // logikasi (`waitUntilReadyToShow`) allaqachon to'liq ekranga o'rnatilgan
+  // oynani "maximized" deb noto'g'ri hisoblab, uni orqaga (~96%) qisib
+  // qo'yadi. `ensureInitialized()` esa faqat pastda `AppWindowService`ning
+  // tray/`onWindowClose` funksiyalari ishlashi uchun kerak — vizual ta'siri
+  // yo'q.
   await windowManager.ensureInitialized();
-  const windowOptions = WindowOptions(title: 'Miraprint', center: true);
-  windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.maximize();
-    await windowManager.show();
-    await windowManager.focus();
-  });
+  await AppWindowService().init();
   runApp(const MyApp());
 }
 

@@ -25,8 +25,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
 
   FlutterWindow window(project);
-  Win32Window::Point origin(10, 10);
-  Win32Window::Size size(1280, 720);
+
+  // pos_app'dagi kabi: oyna ekranning ish maydoni (taskbar'siz) o'lchamida,
+  // Dart/window_manager ishga tushishidan oldin, to'g'ridan-to'g'ri shu yerda
+  // yaratiladi — shu sababli "avval kichik, keyin katta" degan ko'rinish
+  // bo'lmaydi.
+  RECT workArea;
+  SystemParametersInfo(SPI_GETWORKAREA, 0, &workArea, 0);
+  int screenWidth = workArea.right - workArea.left;
+  int screenHeight = workArea.bottom - workArea.top;
+
+  Win32Window::Point origin(workArea.left, workArea.top);
+  Win32Window::Size size(screenWidth, screenHeight);
   if (!window.Create(L"miraprint", origin, size)) {
     return EXIT_FAILURE;
   }
