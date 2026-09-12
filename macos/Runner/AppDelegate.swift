@@ -1,8 +1,16 @@
 import Cocoa
 import FlutterMacOS
+import ServiceManagement
 
 @main
 class AppDelegate: FlutterAppDelegate {
+  override func applicationDidFinishLaunching(_ notification: Notification) {
+      super.applicationDidFinishLaunching(notification)
+
+      if #available(macOS 13.0, *) {
+        try? SMAppService.mainApp.register()
+      }
+  }
   override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
     return false
   }

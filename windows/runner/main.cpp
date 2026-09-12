@@ -2,8 +2,42 @@
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
 
+#include <string>
+
 #include "flutter_window.h"
 #include "utils.h"
+
+namespace {
+
+// Kompyuter yoqilganda/login qilinganda ilova avtomatik ishga tushishi
+// uchun, HKEY_CURRENT_USER ostidagi Run kalitiga o'z .exe yo'lini yozib
+// qo'yadi (admin huquqi kerak emas; macOS'dagi SMAppService'ga mos keladi).
+void RegisterAppForStartup() {
+  wchar_t exePath[MAX_PATH];
+  if (GetModuleFileNameW(nullptr, exePath, MAX_PATH) == 0) {
+    return;
+  }
+
+  std::wstring quotedPath = L"\"" + std::wstring(exePath) + L"\"";
+
+  HKEY key;
+  LONG result = RegOpenKeyExW(
+      HKEY_CURRENT_USER,
+      L"Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+      0, KEY_SET_VALUE, &key);
+  if (result != ERROR_SUCCESS) {
+    return;
+  }
+
+  RegSetValueExW(
+      key, L"miraprint", 0, REG_SZ,
+      reinterpret_cast<const BYTE*>(quotedPath.c_str()),
+      static_cast<DWORD>((quotedPath.size() + 1) * sizeof(wchar_t)));
+
+  RegCloseKey(key);
+}
+
+}  // namespace
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
@@ -41,6 +75,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);
+
+  RegisterAppForStartup();
 
   ::MSG msg;
   while (::GetMessage(&msg, nullptr, 0, 0)) {
