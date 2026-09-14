@@ -1,4 +1,5 @@
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:image/image.dart' as img;
 
 import '../../model/receipt/receipt_data.dart';
 import '../../model/receipt/receipt_settings.dart';
@@ -8,6 +9,7 @@ import 'receipt_canvas_renderer.dart';
 Future<List<int>> buildReceiptBytes(
   ReceiptData receipt, {
   ReceiptSettings? settings,
+  Future<img.Image> Function()? extraImageBuilder,
 }) async {
   final profile = await CapabilityProfile.load();
   final generator = Generator(PaperSize.mm80, profile);
@@ -48,6 +50,12 @@ Future<List<int>> buildReceiptBytes(
   if (footerImage != null) {
     bytes += generator.emptyLines(1);
     bytes += generator.imageRaster(footerImage);
+  }
+
+  if (extraImageBuilder != null) {
+    final extraImage = await extraImageBuilder();
+    bytes += generator.emptyLines(1);
+    bytes += generator.imageRaster(extraImage);
   }
 
   bytes += generator.cut();

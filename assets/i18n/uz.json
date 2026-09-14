@@ -1,0 +1,44 @@
+{
+  "app": {
+    "title": "Miraprint v{version}"
+  },
+  "common": {
+    "refresh": "Yangilash",
+    "cancel": "Bekor qilish",
+    "continue": "Davom etish",
+    "sending": "Yuborilmoqda...",
+    "downloading": "Yuklanmoqda..."
+  },
+  "language": {
+    "label": "Til"
+  },
+  "server_status": {
+    "title": "Server holati",
+    "waiting": "Kutilmoqda",
+    "starting": "Ishga tushmoqda...",
+    "running": "Ishlayapti",
+    "error": "Xato"
+  },
+  "printer": {
+    "title": "Printer",
+    "not_found": "Printer topilmadi",
+    "test_print": "Test Print",
+    "sent_success": "{name} printerga yuborildi"
+  },
+  "last_receipt": {
+    "title": "So'nggi qabul qilingan chek (POST /print)",
+    "empty": "Hali hech qanday chek qabul qilinmagan"
+  },
+  "receipt_preview": {
+    "logo_not_loaded": "(logo yuklanmadi)"
+  },
+  "update": {
+    "title": "Yangilanish mavjud",
+    "new_version": "Yangi versiya: {version}",
+    "update_button": "Yangilash",
+    "downloaded_title": "Yuklab olindi",
+    "downloaded_body": "Davom etish uchun quyidagi tugmani bosing. Finder ochiladi — Miraprint'ni Applications papkasiga torting, so'ng uni qayta oching. Bu ilova hozir yopiladi.",
+    "progress_of": "{received} MB / {total} MB",
+    "progress_downloaded": "{received} MB yuklandi"
+  }
+}

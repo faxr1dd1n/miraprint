@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 
 import '../../../bloc/server_bloc/server_bloc.dart';
 import '../../../core/app_colors.dart';
@@ -9,6 +10,9 @@ class ServerStatusWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // `locale_service.dart`dagi izohga qarang — til o'zgarganda shu widget
+    // `Navigator`dan mustaqil ravishda qayta qurilishi uchun kerak.
+    LocalizationProvider.of(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return BlocBuilder<ServerBloc, ServerState>(
@@ -17,19 +21,23 @@ class ServerStatusWidget extends StatelessWidget {
           ServerStatus.initial => (
             colorScheme.onSurfaceVariant,
             Icons.circle_outlined,
-            'Kutilmoqda',
+            translate('server_status.waiting'),
           ),
           ServerStatus.starting => (
             AppColors.warning,
             Icons.sync,
-            'Ishga tushmoqda...',
+            translate('server_status.starting'),
           ),
           ServerStatus.running => (
             AppColors.success,
             Icons.check_circle,
-            'Ishlayapti',
+            translate('server_status.running'),
           ),
-          ServerStatus.error => (colorScheme.error, Icons.error, 'Xato'),
+          ServerStatus.error => (
+            colorScheme.error,
+            Icons.error,
+            translate('server_status.error'),
+          ),
         };
 
         return Row(

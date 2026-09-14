@@ -1,5 +1,6 @@
 import 'package:barcode/barcode.dart' as bc;
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 
 import '../../../model/receipt/receipt_data.dart';
 
@@ -20,6 +21,8 @@ class ReceiptPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    LocalizationProvider.of(context);
+
     return Container(
       width: 320,
       padding: const EdgeInsets.all(16),
@@ -35,8 +38,10 @@ class ReceiptPreview extends StatelessWidget {
               child: Image.network(
                 receipt.logo,
                 height: 80,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Text('(logo yuklanmadi)', style: _mono),
+                errorBuilder: (context, error, stackTrace) => Text(
+                  translate('receipt_preview.logo_not_loaded'),
+                  style: _mono,
+                ),
               ),
             ),
             const SizedBox(height: 8),

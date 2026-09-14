@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:miraprint/core/app_logger.dart';
 import 'package:miraprint/model/update/update_info.dart';
 import 'package:miraprint/service/update/update_checker.dart';
@@ -77,16 +78,12 @@ class _UpdateAvailableCardState extends State<UpdateAvailableCard> {
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
-            title: const Text('Yuklab olindi'),
-            content: const Text(
-              'Davom etish uchun quyidagi tugmani bosing. Finder ochiladi — '
-              'Miraprint\'ni Applications papkasiga torting, so\'ng uni '
-              'qayta oching. Bu ilova hozir yopiladi.',
-            ),
+            title: Text(translate('update.downloaded_title')),
+            content: Text(translate('update.downloaded_body')),
             actions: [
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Davom etish'),
+                child: Text(translate('common.continue')),
               ),
             ],
           ),
@@ -114,6 +111,7 @@ class _UpdateAvailableCardState extends State<UpdateAvailableCard> {
 
   @override
   Widget build(BuildContext context) {
+    LocalizationProvider.of(context);
     final info = _updateInfo;
     if (info == null) return const SizedBox.shrink();
 
@@ -123,17 +121,21 @@ class _UpdateAvailableCardState extends State<UpdateAvailableCard> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: SectionCard(
-        title: 'Yangilanish mavjud',
+        title: translate('update.title'),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
-                Expanded(child: Text('Yangi versiya: ${info.version}')),
+                Expanded(
+                  child: Text(
+                    translate('update.new_version', args: {'version': info.version}),
+                  ),
+                ),
                 if (_isDownloading)
                   TextButton(
                     onPressed: _cancelDownload,
-                    child: const Text('Bekor qilish'),
+                    child: Text(translate('common.cancel')),
                   ),
                 const SizedBox(width: 8),
                 FilledButton.icon(
@@ -149,7 +151,11 @@ class _UpdateAvailableCardState extends State<UpdateAvailableCard> {
                           ),
                         )
                       : const Icon(Icons.download),
-                  label: Text(_isDownloading ? 'Yuklanmoqda...' : 'Yangilash'),
+                  label: Text(
+                    _isDownloading
+                        ? translate('common.downloading')
+                        : translate('update.update_button'),
+                  ),
                 ),
               ],
             ),
@@ -162,8 +168,17 @@ class _UpdateAvailableCardState extends State<UpdateAvailableCard> {
               const SizedBox(height: 4),
               Text(
                 _totalBytes > 0
-                    ? '${_formatBytes(_receivedBytes)} MB / ${_formatBytes(_totalBytes)} MB'
-                    : '${_formatBytes(_receivedBytes)} MB yuklandi',
+                    ? translate(
+                        'update.progress_of',
+                        args: {
+                          'received': _formatBytes(_receivedBytes),
+                          'total': _formatBytes(_totalBytes),
+                        },
+                      )
+                    : translate(
+                        'update.progress_downloaded',
+                        args: {'received': _formatBytes(_receivedBytes)},
+                      ),
                 style: TextStyle(
                   fontSize: 12,
                   color: colorScheme.onSurfaceVariant,

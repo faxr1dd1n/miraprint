@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:miraprint/model/receipt/header_item.dart';
 import 'package:miraprint/model/receipt/receipt_data.dart';
 import 'package:miraprint/model/receipt/receipt_item.dart';
@@ -8,6 +9,7 @@ import 'package:miraprint/model/receipt/total_item.dart';
 import 'package:miraprint/service/printer/mac_printer_lister.dart';
 import 'package:miraprint/service/printer/printer_connection.dart';
 import 'package:miraprint/service/receipt/receipt_builder.dart';
+import 'package:miraprint/service/receipt/receipt_canvas_renderer.dart';
 import 'package:miraprint/ui/home/widget/result_banner.dart';
 import 'package:miraprint/ui/home/widget/section_card.dart';
 import 'package:printing/printing.dart';
@@ -54,12 +56,15 @@ class _PrinterSectionState extends State<PrinterSection> {
     });
 
     try {
-      final bytes = await buildReceiptBytes(_sampleReceipt());
+      final bytes = await buildReceiptBytes(
+        _sampleReceipt(),
+        extraImageBuilder: renderSocialIconsTestImage,
+      );
       await PrinterConnection.forPlatform(printer.name).sendRaw(bytes);
       setState(
         () => _testPrintResult = (
           success: true,
-          message: '${printer.name} printerga yuborildi',
+          message: translate('printer.sent_success', args: {'name': printer.name}),
         ),
       );
     } catch (e) {
@@ -91,15 +96,16 @@ class _PrinterSectionState extends State<PrinterSection> {
 
   @override
   Widget build(BuildContext context) {
+    LocalizationProvider.of(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return SectionCard(
-      title: 'Printer',
+      title: translate('printer.title'),
       trailing: IconButton.filledTonal(
         onPressed: _isLoadingPrinters ? null : _loadPrinters,
         icon: const Icon(Icons.refresh),
         iconSize: 22,
-        tooltip: 'Yangilash',
+        tooltip: translate('common.refresh'),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -111,7 +117,7 @@ class _PrinterSectionState extends State<PrinterSection> {
             )
           else if (_printers.isEmpty)
             Text(
-              'Printer topilmadi',
+              translate('printer.not_found'),
               style: TextStyle(
                 color: colorScheme.onSurfaceVariant,
                 fontSize: 18,
@@ -154,7 +160,9 @@ class _PrinterSectionState extends State<PrinterSection> {
                     )
                   : const Icon(Icons.print),
               label: Text(
-                _isTestPrinting ? 'Yuborilmoqda...' : 'Test Print',
+                _isTestPrinting
+                    ? translate('common.sending')
+                    : translate('printer.test_print'),
                 style: const TextStyle(fontSize: 18),
               ),
             ),

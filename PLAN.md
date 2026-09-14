@@ -216,6 +216,29 @@ JSON kontrakt eski C# ilova (`MainForm.cs`, 845-895 va 243-264-qatorlar) bilan *
 - **Cheklov:** `SMAppService` faqat **macOS 13 (Ventura)** va undan yuqorisida mavjud. Loyihaning `MACOSX_DEPLOYMENT_TARGET`i hozir `10.15` — shuning uchun kod `if #available(macOS 13.0, *)` bilan himoyalanadi: eski macOS'da bu funksiya jim ishlamay qoladi (xato bermaydi), ilovaning qolgan qismi (server, chek chiqarish, tray) odatdagidek ishlashda davom etadi.
 - **Windows uchun:** alohida mexanizm kerak (Registry `Run` kaliti yoki Startup papkasiga yorliq) — hozircha faqat macOS uchun qilinmoqda, Windows keyinroq alohida ko'rib chiqiladi.
 
+### Bosqich 12 — OS drayveri orqali chop etish (sinov, RAW ESC/POS bilan parallel)
+
+- **Muammo:** C# ilova (`~/Desktop/PrinterTestApp — Latest/MainForm.cs`) chiqargan chek matni/elementlari biznikidan tiniqroq. Sabab — C# `PrintDocument`/GDI+ orqali OS print-drayveriga chop etadi, drayver esa o'zining professional rasterlash algoritmi bilan piksellarga aylantiradi. Bizda esa `Canvas` → `img.Image` → `esc_pos_utils_plus`ning oddiy 127-chegarali threshold'i bilan o'zimiz rasterlaymiz — bu tabiiy ravishda xiraroq chiqadi. Qo'lda Floyd-Steinberg dithering sinalgan (2026-09-14) — natija yaxshilanmadi, demak muammo shunchaki threshold algoritmida emas.
+- **Kirill xavfsizligi tekshirildi:** Bosqich 5'da hal qilingan kirill muammosi (`Printer_POS_80`da hardware Cyrillic yo'q) faqat ESC/POS **matn** rejimiga tegishli edi. Drayver orqali chop etish ham (C# kabi) matnni oldindan piksellarga aylantirib yuboradi — printer harflarni "ko'rmaydi", faqat tayyor nuqtalarni chop etadi. Shuning uchun drayver yo'lida ham kirill muammosi bo'lmasligi kerak.
+- **Talab:** printer System Settings > Printers'da haqiqiy drayver bilan ko'rinishi kerak (foydalanuvchi tomonidan tasdiqlangan, 2026-09-14).
+- **Bilinadigan xavf:** drayver orqali chop etganda ESC/POS `cut()` buyrug'ini to'g'ridan-to'g'ri yubora olmaymiz — qog'oz kesish printerning o'z auto-cut sozlamasiga bog'liq bo'lib qoladi.
+- **Amalga oshirilgan (2026-09-14):** `pdf` paketi qo'shildi, `PdfGoogleFonts.roboto*()` bilan `lib/service/receipt/receipt_pdf_builder.dart` yozildi (chek tarkibini PDF sifatida quradi), `printer_section.dart`ga "Test Print (drayver)" tugmasi qo'shildi (`Printing.directPrintPdf`).
+- **Natija — macOS'da ishlamadi, kod olib tashlandi (2026-09-14):**
+  - `directPrintPdf` xato berdi: `Exception: 'Printer_POS_80' nomli printer OS drayver ro'yxatida topilmadi` — sabab, `Printing.directPrintPdf` ichida macOS `NSPrinter(name:)` orqali qidiradi, bu esa CUPS navbati nomi bilan mos kelmadi.
+  - Chuqurroq tekshirilganda (`lpstat -l -p Printer_POS_80`) haqiqiy sabab topildi: macOS bu printerga **noto'g'ri, generic "HP LaserJet Series PCL 4/5" drayverini** avtomatik yopishtirib qo'ygan ekan (`printer-make-and-model='HP LaserJet Series PCL 4/5'`) — ya'ni "System Settings > Printers"da ko'rinishi hali **printerga mos haqiqiy drayver bor** degani emas edi. PCL — butunlay boshqa printer tili (ESC/POS emas), shu drayver orqali chop etilsa ham chek to'g'ri chiqmasdi.
+  - **Xulosa:** macOS'da bu qurilma uchun drayver orqali chop etish yo'li printsipial jihatdan ishlamaydi (haqiqiy vendor drayveri yo'q) — bu aynan loyihaning boshida RAW ESC/POS yo'li tanlanishining to'g'ri qaror ekanini tasdiqladi. Foydalanuvchi qarori bilan tajriba kodi (`receipt_pdf_builder.dart`, `pdf` dependency, "Test Print (drayver)" tugmasi) butunlay olib tashlandi — bu bo'lim faqat **kelajakda qayta urinib ko'rmaslik uchun** hujjat sifatida saqlanmoqda.
+  - **Ochiq savol:** Windows'da xuddi shu printer uchun haqiqiy vendor drayveri o'rnatilgan bo'lishi mumkin (C# ilova Windows'da ishlagan) — agar kerak bo'lsa, bu alohida, Windows kompyuterda tekshiriladi.
+  - Chek tiniqligini yaxshilash masalasi hali ochiq — RAW ESC/POS pipeline'ining o'zida davom ettiriladi.
+
+### Bosqich 13 — Ilova tili (i18n): qattiq yozilgan matnlar o'rniga tarjima
+
+- **Muammo:** ilova UI'sidagi barcha matnlar (Printer, Test Print, Server holati va h.k.) hozircha o'zbek tilida qattiq yozilgan (`Text('...')`).
+- **Yondashuv — `onebuy-flutter-mobile` (`~/StudioProjects/onebuy-flutter-mobile`) bilan bir xil:** o'sha loyiha `flutter_translate` kutubxonasi (v4.1.0) orqali JSON-fayl asosidagi i18n ishlatadi — `assets/i18n/{til}.json`, global `translate('key')` funksiyasi bilan chaqiriladi, kod generatsiyasi (`.arb`/`gen-l10n`) yo'q. Onebuy'da bu paket lokal nusxada (`packages/flutter_translate`) saqlangan, lekin versiyasi pub.dev'dagi rasmiy paket bilan **aynan bir xil (4.1.0)** — shuning uchun Miraprint'da to'g'ridan-to'g'ri rasmiy `flutter_translate: ^4.1.0` paketi qo'shiladi, dublikat kod ko'chirilmaydi.
+- **Tillar (foydalanuvchi qarori, 2026-09-14):** o'zbek, rus, ingliz — `assets/i18n/uz.json`, `ru.json`, `en.json`.
+- **Farq — til o'zgarganda qayta chizish:** onebuy'da bu `RxBus` (umumiy event bus) + `setState` orqali qilingan, lekin Miraprint'da event bus yo'q. Shu o'rniga loyihada allaqachon bor naqsh — global `ValueNotifier` (`lib/service/receipt/last_receipt_notifier.dart`dagi kabi) — qo'llaniladi: `ValueNotifier<Locale>` + `ValueListenableBuilder` `MaterialApp`ni qayta chizadi.
+- **Saqlash:** `shared_preferences` (onebuy'dagi kabi), tanlangan til kaliti.
+- **Qadamlar:** 1) `pubspec.yaml`ga `flutter_translate`, `shared_preferences` va `assets/i18n/` qo'shish; 2) JSON tarjima fayllari; 3) `main.dart`da `LocalizationDelegate`/`LocalizedApp` ulash; 4) `lib/service/locale/` — saqlash + `ValueNotifier` servisi; 5) barcha qattiq matnlarni `translate('...')`ga almashtirish; 6) til tanlash UI (masalan `home_screen.dart` app bar'ida).
+
 ## 6. Ish uslubi
 
 - Har bosqich kichik va real (toy misollar yo'q) — to'g'ridan-to'g'ri yakuniy kodning bir qismi.

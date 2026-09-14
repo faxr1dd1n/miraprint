@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   cupertino_icons: ^1.0.8
   shelf: ^1.4.2
@@ -26,6 +28,14 @@ dependencies:
   window_manager: ^0.5.2
   path_provider: ^2.1.6
   tray_manager: ^0.5.3
+  flutter_svg: ^2.0.10+1
+  # Miraprint tuzatishi bilan lokal nusxa — pub.dev'dagi 4.1.0 versiyasi
+  # yangi Flutter SDK'da (`AssetManifest.json` endi generatsiya qilinmaydi,
+  # `AssetManifest.bin` bilan almashtirilgan) ishlamaydi
+  # (`packages/flutter_translate/lib/src/services/locale_file_service.dart`).
+  flutter_translate:
+    path: packages/flutter_translate
+  shared_preferences: ^2.2.0
 
 dev_dependencies:
   flutter_test:
@@ -33,6 +43,13 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
+
+# `flutter_translate` intl ^0.19.0 talab qiladi, lekin `flutter_localizations`
+# SDK'dan aynan 0.20.2'ni majburlaydi (`onebuy-flutter-mobile`da ham xuddi
+# shu sabab bilan qo'llanilgan). `flutter_translate` intl'dan faqat
+# `Intl.defaultLocale`ni ishlatadi — 0.19→0.20 farqi bunga ta'sir qilmaydi.
+dependency_overrides:
+  intl: 0.20.2
 
 flutter_launcher_icons:
   image_path: "assets/miraprint_logo.png"
@@ -49,6 +66,8 @@ flutter:
     - assets/miraprint_logo.png
     - assets/tray_icon.png
     - assets/tray_icon.ico
+    - assets/social_media/
+    - assets/i18n/
 
   # fonts:
   #   - family: Schyler

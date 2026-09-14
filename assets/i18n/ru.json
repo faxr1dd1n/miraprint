@@ -1,0 +1,44 @@
+{
+  "app": {
+    "title": "Miraprint v{version}"
+  },
+  "common": {
+    "refresh": "Обновить",
+    "cancel": "Отмена",
+    "continue": "Продолжить",
+    "sending": "Отправка...",
+    "downloading": "Загрузка..."
+  },
+  "language": {
+    "label": "Язык"
+  },
+  "server_status": {
+    "title": "Статус сервера",
+    "waiting": "Ожидание",
+    "starting": "Запускается...",
+    "running": "Работает",
+    "error": "Ошибка"
+  },
+  "printer": {
+    "title": "Принтер",
+    "not_found": "Принтер не найден",
+    "test_print": "Тестовая печать",
+    "sent_success": "Отправлено на принтер {name}"
+  },
+  "last_receipt": {
+    "title": "Последний полученный чек (POST /print)",
+    "empty": "Чеков пока не поступало"
+  },
+  "receipt_preview": {
+    "logo_not_loaded": "(логотип не загружен)"
+  },
+  "update": {
+    "title": "Доступно обновление",
+    "new_version": "Новая версия: {version}",
+    "update_button": "Обновить",
+    "downloaded_title": "Загружено",
+    "downloaded_body": "Нажмите кнопку ниже, чтобы продолжить. Откроется Finder — перетащите Miraprint в папку Applications, затем откройте его заново. Приложение сейчас закроется.",
+    "progress_of": "{received} МБ / {total} МБ",
+    "progress_downloaded": "{received} МБ загружено"
+  }
+}

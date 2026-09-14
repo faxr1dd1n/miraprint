@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image/image.dart' as img;
 
 import '../../model/receipt/header_item.dart';
@@ -292,5 +293,71 @@ Future<img.Image?> renderFooterImage(ReceiptSettings? settings) async {
       Paint()..color = const Color(0xFF000000),
     );
     painter.paint(canvas, Offset((_printWidth - painter.width) / 2, gap + 2 + gap));
+  });
+}
+
+/// Sinov uchun: `assets/social_media/` papkasidagi barcha ijtimoiy tarmoq
+/// ikonkalarini bitta qatorda, nomlari bilan chop etadigan rasm.
+Future<img.Image> renderSocialIconsTestImage() async {
+  const icons = [
+    ('instagram.svg', 'Instagram'),
+    ('facebook_square.svg', 'Facebook'),
+    ('twitter.svg', 'Twitter'),
+    ('linkedin_square.svg', 'LinkedIn'),
+    ('gmail_outlined.svg', 'Gmail'),
+  ];
+
+  const iconSize = 64.0;
+  const gap = 24.0;
+  const labelGap = 10.0;
+  const labelFontSize = 18.0;
+
+  final pictures = <ui.Picture>[];
+  final sizes = <Size>[];
+  for (final (file, _) in icons) {
+    final pictureInfo = await vg.loadPicture(
+      SvgAssetLoader('assets/social_media/$file'),
+      null,
+    );
+    pictures.add(pictureInfo.picture);
+    sizes.add(pictureInfo.size);
+  }
+
+  final labelPainters = [
+    for (final (_, label) in icons)
+      TextPainter(
+        text: TextSpan(
+          text: label,
+          style: const TextStyle(
+            color: Color(0xFF000000),
+            fontSize: labelFontSize,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout(),
+  ];
+
+  final totalWidth = icons.length * iconSize + (icons.length - 1) * gap;
+  final startX = (_printWidth - totalWidth) / 2;
+  final totalHeight = iconSize + labelGap + labelFontSize + 8;
+
+  return _rasterize(totalHeight, (canvas) {
+    for (var i = 0; i < icons.length; i++) {
+      final x = startX + i * (iconSize + gap);
+      final size = sizes[i];
+
+      canvas.save();
+      canvas.translate(x, 0);
+      canvas.scale(iconSize / size.width, iconSize / size.height);
+      canvas.drawPicture(pictures[i]);
+      canvas.restore();
+      pictures[i].dispose();
+
+      final label = labelPainters[i];
+      label.paint(
+        canvas,
+        Offset(x + (iconSize - label.width) / 2, iconSize + labelGap),
+      );
+    }
   });
 }

@@ -1,0 +1,44 @@
+{
+  "app": {
+    "title": "Miraprint v{version}"
+  },
+  "common": {
+    "refresh": "Refresh",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "sending": "Sending...",
+    "downloading": "Downloading..."
+  },
+  "language": {
+    "label": "Language"
+  },
+  "server_status": {
+    "title": "Server status",
+    "waiting": "Waiting",
+    "starting": "Starting...",
+    "running": "Running",
+    "error": "Error"
+  },
+  "printer": {
+    "title": "Printer",
+    "not_found": "No printer found",
+    "test_print": "Test Print",
+    "sent_success": "Sent to printer {name}"
+  },
+  "last_receipt": {
+    "title": "Last received receipt (POST /print)",
+    "empty": "No receipt received yet"
+  },
+  "receipt_preview": {
+    "logo_not_loaded": "(logo failed to load)"
+  },
+  "update": {
+    "title": "Update available",
+    "new_version": "New version: {version}",
+    "update_button": "Update",
+    "downloaded_title": "Downloaded",
+    "downloaded_body": "Click the button below to continue. Finder will open — drag Miraprint into the Applications folder, then reopen it. This app will now close.",
+    "progress_of": "{received} MB / {total} MB",
+    "progress_downloaded": "{received} MB downloaded"
+  }
+}
