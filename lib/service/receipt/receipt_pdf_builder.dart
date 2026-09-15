@@ -52,7 +52,16 @@ Future<Uint8List> buildReceiptPdf(
   final doc = pw.Document();
   doc.addPage(
     pw.Page(
-      pageFormat: PdfPageFormat.roll80,
+      // `PdfPageFormat.roll80`ning standart 5mm chekka bo'shlig'i (har
+      // tarafdan) 80mm qog'ozning ~12%ini yeb qo'yardi — status matni
+      // kabi uzunroq qatorlar shu sababli ikki qatorga bo'linib qolgan.
+      // 2mm — termal chek uchun odatiy xavfsiz chekka.
+      pageFormat: PdfPageFormat.roll80.copyWith(
+        marginLeft: 2 * PdfPageFormat.mm,
+        marginRight: 2 * PdfPageFormat.mm,
+        marginTop: 2 * PdfPageFormat.mm,
+        marginBottom: 2 * PdfPageFormat.mm,
+      ),
       theme: pw.ThemeData.withFont(base: regularFont, bold: boldFont),
       build: (context) => pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.stretch,
@@ -272,8 +281,13 @@ List<pw.Widget> _buildContent(
             data: receipt.barcode,
             barcode: pw.Barcode.code128(),
             drawText: false,
-            width: pt(200),
-            height: pt(60),
+            // `BarcodeWidget` har bir chiziqni "width ÷ modullar soni"
+            // sifatida chizadi — qisqa raqamlarda (masalan 6 xonali chek
+            // raqami) modul kam bo'lgani uchun avvalgi keng qiymat (200)
+            // har bir chiziqni haddan tashqari qalin qilib qo'ygan edi.
+            width: pt(120),
+            // Receipt.vue: `JsBarcode(..., { height: 80 })`.
+            height: pt(80),
           ),
         ),
       );
