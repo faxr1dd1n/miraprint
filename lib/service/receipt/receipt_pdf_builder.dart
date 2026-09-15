@@ -23,8 +23,11 @@ double pt(double px) => px * _pxToPt;
 
 const _baseFontSize = 12.0 * _pxToPt;
 const _totalBigFontSize = 16.0 * _pxToPt;
-const _statusFontSize = 20.0 * _pxToPt;
-const _footerFontSize = 14.0 * _pxToPt;
+// Status/footer uchun to'g'ridan-to'g'ri CSS qiymatlari (20px/14px) tor
+// 80mm qog'ozda haddan tashqari katta chiqayotgani tasdiqlangani uchun
+// pastroq qiymatga tushirildi.
+const _statusFontSize = 16.0 * _pxToPt;
+const _footerFontSize = 12.0 * _pxToPt;
 
 /// Windows uchun: chekni PDF sifatida quradi, so'ng `Printing.directPrintPdf`
 /// orqali OS print-spooleri/drayveriga yuboriladi (`PLAN.md`, Bosqich 12,
@@ -252,8 +255,8 @@ List<pw.Widget> _buildContent(
                   if (socialSvgs[social] != null)
                     pw.SvgImage(
                       svg: socialSvgs[social]!,
-                      width: pt(12),
-                      height: pt(12),
+                      width: pt(18),
+                      height: pt(18),
                     ),
                   pw.SizedBox(width: pt(6)),
                   pw.Text(
@@ -292,12 +295,14 @@ List<pw.Widget> _buildContent(
   }
 
   // Receipt.vue `.thanks`: markazlashgan, letter-spacing:1px.
+  // Barcode'dan oldingi bo'shliq (pt(12)) bilan bir xil bo'lishi uchun —
+  // avval bu yerda 10 edi, tepa/pastda notekis ko'rinardi.
   final footerNotice = settings?.texts.footerNotice;
   if (footerNotice != null && footerNotice.isNotEmpty) {
     widgets
-      ..add(pw.SizedBox(height: halveInCompact(10)))
+      ..add(pw.SizedBox(height: halveInCompact(12)))
       ..add(_divider(0))
-      ..add(pw.SizedBox(height: halveInCompact(10)))
+      ..add(pw.SizedBox(height: halveInCompact(12)))
       ..add(
         pw.Text(
           footerNotice,
@@ -360,9 +365,12 @@ pw.Widget _priceRow(
 /// `verticalMargin` chaqiruvchi tomonidan allaqachon `pt(...)` bilan
 /// o'girilgan holda keladi (`zeroInCompact`/`halveInCompact`).
 pw.Widget _divider(double verticalMargin) {
+  // CSS asosidagi 1px (pt(1)=0.75pt) hamon qalin chiqqani tasdiqlandi —
+  // yarmiga tushirildi.
+  const thickness = 0.375;
   return pw.Divider(
-    height: verticalMargin * 2 + pt(1),
-    thickness: pt(1),
+    height: verticalMargin * 2 + thickness,
+    thickness: thickness,
     color: PdfColors.black,
   );
 }
