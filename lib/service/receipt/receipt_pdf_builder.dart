@@ -52,15 +52,15 @@ Future<Uint8List> buildReceiptPdf(
   final doc = pw.Document();
   doc.addPage(
     pw.Page(
-      // `PdfPageFormat.roll80`ning standart 5mm chekka bo'shlig'i (har
-      // tarafdan) 80mm qog'ozning ~12%ini yeb qo'yardi — status matni
-      // kabi uzunroq qatorlar shu sababli ikki qatorga bo'linib qolgan.
-      // 2mm — termal chek uchun odatiy xavfsiz chekka.
+      // Chap-o'ng chekka bo'shlig'i butunlay olib tashlandi (foydalanuvchi
+      // qarori) — matn joylashuvi (chapga tekislangan qatorlar) o'zgarmaydi,
+      // faqat butun kontent to'liq 80mm kenglikni egallaydi. Tepa/past — 2mm
+      // (qog'oz tortish uchun minimal xavfsiz chekka).
       pageFormat: PdfPageFormat.roll80.copyWith(
-        marginLeft: 2 * PdfPageFormat.mm,
-        marginRight: 2 * PdfPageFormat.mm,
-        marginTop: 2 * PdfPageFormat.mm,
-        marginBottom: 2 * PdfPageFormat.mm,
+        marginLeft: 0,
+        marginRight: 0,
+        marginTop: 0,
+        marginBottom: 0,
       ),
       theme: pw.ThemeData.withFont(base: regularFont, bold: boldFont),
       build: (context) => pw.Column(
@@ -117,9 +117,7 @@ List<pw.Widget> _buildContent(
   if (logoBytes != null) {
     widgets
       ..add(
-        pw.Center(
-          child: pw.Image(pw.MemoryImage(logoBytes), height: pt(60)),
-        ),
+        pw.Center(child: pw.Image(pw.MemoryImage(logoBytes), height: pt(60))),
       )
       ..add(pw.SizedBox(height: halveInCompact(8)));
   }
