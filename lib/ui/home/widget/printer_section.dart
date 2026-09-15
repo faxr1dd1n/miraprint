@@ -5,13 +5,15 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:miraprint/model/receipt/header_item.dart';
 import 'package:miraprint/model/receipt/receipt_data.dart';
 import 'package:miraprint/model/receipt/receipt_item.dart';
+import 'package:miraprint/model/receipt/social_link.dart';
 import 'package:miraprint/model/receipt/total_item.dart';
 import 'package:miraprint/service/printer/mac_printer_lister.dart';
 import 'package:miraprint/service/printer/printer_connection.dart';
 import 'package:miraprint/service/receipt/receipt_builder.dart';
-import 'package:miraprint/service/receipt/receipt_canvas_renderer.dart';
+import 'package:miraprint/service/receipt/receipt_pdf_builder.dart';
 import 'package:miraprint/ui/home/widget/result_banner.dart';
 import 'package:miraprint/ui/home/widget/section_card.dart';
+import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 
 class PrinterSection extends StatefulWidget {
@@ -56,11 +58,22 @@ class _PrinterSectionState extends State<PrinterSection> {
     });
 
     try {
-      final bytes = await buildReceiptBytes(
-        _sampleReceipt(),
-        extraImageBuilder: renderSocialIconsTestImage,
-      );
-      await PrinterConnection.forPlatform(printer.name).sendRaw(bytes);
+      if (Platform.isWindows) {
+        // Bosqich 12 (2026-09-15): Windows'da production OS drayveri
+        // orqali chop etadi — Test Print ham aynan shu yo'lni sinaydi.
+        final pdfBytes = await buildReceiptPdf(_sampleReceipt());
+        final success = await Printing.directPrintPdf(
+          printer: printer,
+          format: PdfPageFormat.roll80,
+          onLayout: (_) async => pdfBytes,
+        );
+        if (!success) {
+          throw Exception('Chop etib bo\'lmadi: ${printer.name}');
+        }
+      } else {
+        final bytes = await buildReceiptBytes(_sampleReceipt());
+        await PrinterConnection.forPlatform(printer.name).sendRaw(bytes);
+      }
       setState(
         () => _testPrintResult = (
           success: true,
@@ -91,6 +104,18 @@ class _PrinterSectionState extends State<PrinterSection> {
       ],
       totals: [TotalItem(title: 'Jami', val: '10 000', big: true)],
       barcode: '',
+      // Barcha mavjud ikonkalarni + bitta mavjud bo'lmagan nomni
+      // (`youtube` — zaxira sifatida telegram chiqishi kerak) bir yo'la
+      // sinash uchun.
+      socials: [
+        SocialLink(title: 'Facebook', icon: 'facebook'),
+        SocialLink(title: 'Instagram', icon: 'instagram'),
+        SocialLink(title: 'Telegram', icon: 'telegram'),
+        SocialLink(title: 'Twitter', icon: 'twitter'),
+        SocialLink(title: 'Linkedin', icon: 'linkedin'),
+        SocialLink(title: 'Gmail', icon: 'gmail'),
+        SocialLink(title: 'Youtube (zaxira)', icon: 'youtube'),
+      ],
     );
   }
 

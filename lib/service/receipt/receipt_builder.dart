@@ -1,5 +1,4 @@
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
-import 'package:image/image.dart' as img;
 
 import '../../model/receipt/receipt_data.dart';
 import '../../model/receipt/receipt_settings.dart';
@@ -9,7 +8,6 @@ import 'receipt_canvas_renderer.dart';
 Future<List<int>> buildReceiptBytes(
   ReceiptData receipt, {
   ReceiptSettings? settings,
-  Future<img.Image> Function()? extraImageBuilder,
 }) async {
   final profile = await CapabilityProfile.load();
   final generator = Generator(PaperSize.mm80, profile);
@@ -26,9 +24,13 @@ Future<List<int>> buildReceiptBytes(
 
   // Sinov bilan tasdiqlandi: buzilish logoning o'ziga emas, balki
   // reset'dan keyin ENG BIRINCHI yuboriladigan rasmga bog'liq (printer/USB
-  // ulanishi hali "uyg'onmagan"). Shuning uchun logoni saytdagi tabiiy
-  // o'rniga (boshiga) qaytardik — haqiqiy himoya endi ulanish darajasida,
-  // `mac_raw_printer_connection.dart`dagi kutishda.
+  // ulanishi hali "uyg'onmagan"). Logoni shuning uchun saytdagi tabiiy
+  // o'rniga (boshiga) qaytardik. Bu RAW yo'l endi faqat macOS'da (dasturchi
+  // test muhiti) ishlatiladi — Windows (production) endi OS drayveri
+  // orqali chop etadi (`receipt_pdf_builder.dart`, `PLAN.md` Bosqich 12,
+  // 2026-09-15), shu bilan bu muammo tubdan hal qilingan. Bu yerda tuzatish
+  // qilinmadi — mac'da kamdan-kam holatda hamon yuz berishi mumkin, lekin
+  // production emasligi uchun qabul qilingan xavf.
   if (receipt.logo.isNotEmpty) {
     final logoImage = await loadLogoImage(receipt.logo);
     if (logoImage != null) {
@@ -55,12 +57,6 @@ Future<List<int>> buildReceiptBytes(
   if (footerImage != null) {
     bytes += generator.emptyLines(1);
     bytes += generator.imageRaster(footerImage);
-  }
-
-  if (extraImageBuilder != null) {
-    final extraImage = await extraImageBuilder();
-    bytes += generator.emptyLines(1);
-    bytes += generator.imageRaster(extraImage);
   }
 
   bytes += generator.cut();

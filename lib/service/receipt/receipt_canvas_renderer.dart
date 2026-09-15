@@ -312,9 +312,7 @@ double _renderContent(
 
 /// `SocialLink`larni ikonka + nom yonma-yon (`d-flex align-items-center`),
 /// qatorga sig'masa keyingisiga o'tadigan (`d-inline-block` oqimi) tarzda
-/// `startY`dan boshlab chizadi. `_renderContent` (asosiy chek) va
-/// `renderSocialIconsTestImage` (sinov chizmasi) shu bitta joylashuv
-/// mantig'idan foydalanadi. Qaytadigan qiymat — bloк egallagan balandlik.
+/// `startY`dan boshlab chizadi. Qaytadigan qiymat — bloк egallagan balandlik.
 double _paintSocialIcons(
   Canvas? canvas,
   double startY,
@@ -468,21 +466,3 @@ Future<img.Image?> renderFooterImage(ReceiptSettings? settings) async {
   });
 }
 
-/// Sinov uchun: `socialIconAssets`dagi barcha mavjud ikonkalarni + bitta
-/// mavjud bo'lmagan nom (`youtube`, zaxira sifatida telegram chiqishi
-/// kerak) namunasini haqiqiy chekdagi bilan bir xil joylashuvda
-/// (`_paintSocialIcons` — ikonka+nom yonma-yon, wrap bilan) chop etadi.
-Future<img.Image> renderSocialIconsTestImage() async {
-  final testSocials = [
-    for (final icon in socialIconAssets.keys)
-      SocialLink(title: icon[0].toUpperCase() + icon.substring(1), icon: icon),
-    const SocialLink(title: 'Youtube (zaxira)', icon: 'youtube'),
-  ];
-  final socialIcons = await _loadSocialIcons(testSocials);
-
-  final height = _paintSocialIcons(null, 0, socialIcons);
-  return _rasterize(
-    height,
-    (canvas) => _paintSocialIcons(canvas, 0, socialIcons),
-  );
-}
