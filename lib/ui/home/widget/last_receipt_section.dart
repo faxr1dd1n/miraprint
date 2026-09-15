@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:miraprint/model/receipt/receipt_data.dart';
 import 'package:miraprint/service/receipt/last_receipt_notifier.dart';
 import 'package:miraprint/ui/home/widget/receipt_preview.dart';
 import 'package:miraprint/ui/home/widget/section_card.dart';
@@ -14,10 +13,10 @@ class LastReceiptSection extends StatelessWidget {
 
     return SectionCard(
       title: translate('last_receipt.title'),
-      child: ValueListenableBuilder<ReceiptData?>(
+      child: ValueListenableBuilder<LastReceipt?>(
         valueListenable: lastReceiptNotifier,
-        builder: (context, receipt, _) {
-          if (receipt == null) {
+        builder: (context, last, _) {
+          if (last == null) {
             return Text(
               translate('last_receipt.empty'),
               style: TextStyle(
@@ -26,7 +25,9 @@ class LastReceiptSection extends StatelessWidget {
               ),
             );
           }
-          return Center(child: ReceiptPreview(receipt: receipt));
+          return Center(
+            child: ReceiptPreview(receipt: last.check, settings: last.settings),
+          );
         },
       ),
     );

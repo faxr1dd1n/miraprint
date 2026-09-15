@@ -230,6 +230,17 @@ JSON kontrakt eski C# ilova (`MainForm.cs`, 845-895 va 243-264-qatorlar) bilan *
   - **Ochiq savol:** Windows'da xuddi shu printer uchun haqiqiy vendor drayveri o'rnatilgan bo'lishi mumkin (C# ilova Windows'da ishlagan) — agar kerak bo'lsa, bu alohida, Windows kompyuterda tekshiriladi.
   - Chek tiniqligini yaxshilash masalasi hali ochiq — RAW ESC/POS pipeline'ining o'zida davom ettiriladi.
 
+**Qayta ochildi — Windows uchun drayver yo'liga o'tish qarori (2026-09-15):**
+
+- **Yangi muammo topildi:** RAW ESC/POS oqimida, printer/USB ulanishi (`lp -o raw` — har bir chop etishda **yangi jarayon**) hali "uyg'onmagan" paytda, reset'dan keyin **eng birinchi yuborilgan rasm** (qaysi element bo'lishidan qat'i nazar — sinovda tasdiqlandi: logo ham, kontent ham, kim birinchi bo'lsa o'sha) ba'zan tushunarsiz belgilarga aylanib buziladi. Naqsh tasodifiy — ilova/printerni qayta ishga tushirish ba'zan tuzatadi, ba'zan yo'q.
+- **C# ilova solishtirildi:** u bu muammoga umuman duch kelmagan, chunki chekning asosiy qismini RAW bayt sifatida emas, `PrintDocument` (GDI+ spooler/drayver) orqali chiqargan — faqat 4 baytlik kesish komandasi RAW edi (`MainForm.cs:513-531`), va u payt printer allaqachon katta print job orqali "isigan" bo'lgan.
+- **Foydalanuvchi qarori:** macOS loyihada **faqat dasturchi uchun test muhiti**, haqiqiy ishlab chiqarish (production) — **faqat Windows**. Bosqich 12'da macOS uchun drayver yo'li aniq ishlamasligi tasdiqlangan (haqiqiy vendor drayveri yo'q, generic PCL). Lekin C# ilova Windows'da xuddi shu turdagi printerlar bilan yillar davomida drayver orqali muammosiz ishlagan — demak haqiqiy foydalanuvchi (kassir) kompyuterida printer drayveri **allaqachon o'rnatilgan bo'lishi kutiladi** (eski tizim ham shunga tayangan, bu yangi talab emas).
+- **Yangi reja:** platforma bo'yicha **ikkiga ajratish**:
+  - **Windows (production):** chop etish drayver/spooler orqali (`printing` paketi, `Printing.directPrintPdf`) — Bosqich 12'da olib tashlangan `receipt_pdf_builder.dart`/`pdf` dependency'ni Windows uchun tiklash. Bu "sovuq boshlanish" muammosini tubdan hal qiladi, chunki RAW bayt vaqtlashuvi butunlay drayverga o'tadi.
+  - **macOS (faqat dev/test):** hozirgi RAW ESC/POS yo'li (`mac_raw_printer_connection.dart`, `receipt_canvas_renderer.dart`) **o'zgarishsiz qoladi** — production emasligi uchun mavjud tasodifiy xato qabul qilinadi.
+- **Bilinadigan cheklov (o'zgarmagan):** drayver orqali qog'oz kesish printerning o'z auto-cut sozlamasiga bog'liq — ESC/POS `cut()` to'g'ridan-to'g'ri yuborilmaydi.
+- **Hali tekshirilmagan:** bu reja faqat **haqiqiy Windows kompyuter + haqiqiy o'rnatilgan drayver** bilan sinalganda tasdiqlanadi — hozircha nazariy qaror, mac'da amalga oshirib bo'lmaydi (yuqoridagi bandda tasdiqlangani kabi).
+
 ### Bosqich 13 — Ilova tili (i18n): qattiq yozilgan matnlar o'rniga tarjima
 
 - **Muammo:** ilova UI'sidagi barcha matnlar (Printer, Test Print, Server holati va h.k.) hozircha o'zbek tilida qattiq yozilgan (`Text('...')`).

@@ -1,0 +1,940 @@
+<template>
+  <div
+    class="receipt"
+    :class="[
+      {
+        'with-sub-alert': version === 'v1' && showSubscriptionAlert,
+        'receipt--compact': isCompactReceipt,
+      },
+      `receipt--spacing-${receiptSettings.spacing}`,
+      `receipt--fields-layout-${receiptSettings.layout.fieldsLayout}`,
+    ]"
+    :data-receipt-tid="tid"
+    :style="receiptDynamicStyle"
+  >
+    <slot name="header" />
+
+    <div v-if="isRefund" class="receipt-refund-label">
+      {{ $t('Возврат') }}
+    </div>
+    <div v-if="showLogo && isReceiptFieldVisible('logo')" class="receipt-header">
+      <img :src="logo" @error="handleLogoError" />
+    </div>
+    <p
+      v-if="receiptSettings.layout.dateFormat === 'centered' && isReceiptFieldVisible('receiptDate') && receiptDate"
+      class="receipt-date--centered"
+    >
+      {{ receiptDate | moment('DD.MM.YYYY HH:mm') }}
+    </p>
+    <div v-if="statusLabel && isReceiptFieldVisible('status')" class="receipt-status">
+      {{ statusLabel }}
+    </div>
+    <section class="receipt-block receipt-block--header">
+      <template v-for="field in receiptFields">
+        <div
+          v-if="field === 'orderNumber' && isReceiptFieldVisible(field) && currentNumber"
+          :key="field"
+          class="receipt-ordering-number"
+        >
+          <span class="ordering-number-value">{{ currentNumber }}</span>
+        </div>
+        <p
+          v-else-if="field === 'companyAddress' && isReceiptFieldVisible(field) && companyAddress && !hideBarcode"
+          :key="field"
+        >
+          <strong>{{ $t('Адрес:') }}</strong
+          ><span class="receipt-field-value">{{ companyAddress }}</span>
+        </p>
+        <p
+          v-else-if="field === 'companyInn' && isReceiptFieldVisible(field) && companyInn && !hideBarcode"
+          :key="field"
+        >
+          <strong>{{ $t('ИНН:') }}</strong
+          ><span class="receipt-field-value">{{ companyInn }}</span>
+        </p>
+        <p v-else-if="field === 'transaction' && isReceiptFieldVisible(field) && tid && !hideBarcode" :key="field">
+          <strong>{{ $t('Транзакция:') }}</strong
+          ><span class="receipt-field-value">#{{ tid }}</span>
+        </p>
+        <p
+          v-else-if="
+            field === 'receiptDate' &&
+            isReceiptFieldVisible(field) &&
+            receiptDate &&
+            receiptSettings.layout.dateFormat !== 'centered'
+          "
+          :key="field"
+        >
+          <strong>{{ $t('Дата:') }}</strong
+          ><span class="receipt-field-value">{{ receiptDate | moment('DD.MM.YYYY, HH:mm') }}</span>
+        </p>
+        <p v-else-if="field === 'storageName' && isReceiptFieldVisible(field) && storageName" :key="field">
+          <strong>{{ $t('Филиал:') }}</strong
+          ><span class="receipt-field-value">{{ storageName }}</span>
+        </p>
+        <p v-else-if="field === 'cashier' && isReceiptFieldVisible(field) && employeeName" :key="field">
+          <strong>{{ $t('Кассир:') }}</strong
+          ><span class="receipt-field-value">{{ employeeName }}</span>
+        </p>
+        <p v-else-if="field === 'employee' && isReceiptFieldVisible(field) && creatorEmployeeName" :key="field">
+          <strong>{{ $t('Сотрудник:') }}</strong
+          ><span class="receipt-field-value">{{ creatorEmployeeName }}</span>
+        </p>
+        <p v-else-if="field === 'contacts' && isReceiptFieldVisible(field) && employeePhone" :key="field">
+          <strong>{{ $t('Контакты:') }}</strong
+          ><span class="receipt-field-value">{{ employeePhone }}</span>
+        </p>
+        <template v-else-if="(field === 'client' || field === 'clientTypeName') && isReceiptFieldVisible(field)"
+          ><p v-for="header in headers.filter((header) => header.key === field)" :key="header.key">
+            <strong>{{ $t(header.title) }}</strong
+            ><span class="receipt-field-value">{{ header.val }}</span>
+          </p></template
+        >
+      </template>
+    </section>
+
+    <hr class="border-dark receipt-part-divider" />
+
+    <div v-if="version == 'v1'" class="receipt-products">
+      <template v-for="(product, i) in products">
+        <div :key="i" v-wave="{ disabled: !ripple }" class="line-item" @click="$emit('click:product', product)">
+          <div>
+            <h5 class="text-hover-primary mb-0">{{ product.name }}</h5>
+            <span v-if="hasDiscount(product)" class="text-left item-price fs-13px">
+              <span class="text-decoration-line-through">
+                {{ isRefund ? '-' : '' }}
+                {{ currency(initialLineTotal(product), currencyId, true) }}
+              </span>
+              <br />
+              <span class="font-weight-normal">
+                Скидка {{ product.discount_percent ? mathRound(product.discount_percent, 2) + '%' : '' }}
+              </span>
+            </span>
+            <span v-else class="item-price">
+              {{ isRefund ? '-' : '' }}
+              {{ currency(lineTotal(product), currencyId, true) }}
+            </span>
+
+            <div v-if="hasDiscount(product)" class="w-100 d-flex flex-column">
+              <!-- <span class="item-discount fs-13px">
+                Скидка {{ product.discount_percent ? mathRound(product.discount_percent, 2) + '%' : '' }}
+              </span> -->
+              <!-- <span class="item-dashed"></span> -->
+              <span class="item-price-without-discount font-weight-bold">
+                {{ isRefund ? '-' : '' }}
+                {{ currency(lineTotal(product), currencyId, true) }}
+              </span>
+            </div>
+          </div>
+          <div class="ml-auto pi-qty-counter pt-2 w-130px">
+            <b-btn
+              v-wave
+              variant="white"
+              class="btn-icon rounded-circle"
+              @click.stop="$emit('click:qty-counter', product[quantityKey] - 1, product)"
+            >
+              <i class="tio tio-remove"></i>
+            </b-btn>
+            <span>{{ product[quantityKey] }}</span>
+            <b-btn
+              v-wave
+              variant="primary"
+              class="btn-icon rounded-circle"
+              @click.stop="$emit('click:qty-counter', product[quantityKey] + 1, product)"
+            >
+              <i class="tio tio-add"></i>
+            </b-btn>
+          </div>
+          <div></div>
+        </div>
+      </template>
+    </div>
+    <div v-else class="receipt-products">
+      <template v-for="(product, i) in products">
+        <div :key="i" v-wave="{ disabled: !ripple }" class="line-item" @click="$emit('click:product', product)">
+          <span class="item-name">
+            <span>
+              <span v-if="!hideNumberProducts"> {{ i + 1 }}.</span>
+              {{ product.name }}
+            </span>
+            <slot name="after-name" :item="product" />
+          </span>
+          <span class="item-qty">
+            {{ formatDefaultNumber(product[quantityKey]) }} шт x
+            {{ formatDefaultNumber(hasDiscount(product) ? product[initialPriceKey] : product.price) }}
+          </span>
+          <span class="item-dashed"></span>
+
+          <span v-if="hasDiscount(product)" class="item-price text-decoration-line-through mt-1">
+            {{ isRefund ? '-' : '' }}
+            {{ currency(initialLineTotal(product), currencyId, true) }}
+          </span>
+          <span v-else class="item-price">
+            {{ isRefund ? '-' : '' }}
+            {{ currency(lineTotal(product), currencyId, true) }}
+          </span>
+
+          <div v-if="hasDiscount(product)" class="w-100 d-flex">
+            <span class="item-discount"
+              >Скидка {{ product.discount_percent ? mathRound(product.discount_percent, 2) + '%' : '' }}</span
+            >
+            <span class="item-dashed"></span>
+            <span class="item-price-without-discount font-weight-bold">
+              {{ isRefund ? '-' : '' }}
+              {{ currency(lineTotal(product), currencyId, true) }}
+            </span>
+          </div>
+        </div>
+        <hr :key="i + '_hr'" class="border-dark" />
+      </template>
+    </div>
+
+    <div v-if="products.length" class="total-container" :class="{ 'pb-4': !tid }">
+      <div v-if="version == 'v1'" class="card card-body border-0 bg-dark text-white">
+        <div v-if="totalDiscountAmount > 0" class="line-item total mb-1">
+          <span class="item-name">{{ $t('Сумма') }}</span>
+          <span class="item-dashed"></span>
+          <span class="item-price">
+            {{ isRefund ? '-' : '' }}
+            {{ currency(totalAmount + setMin(totalDiscountAmount), currencyId, true) }}
+          </span>
+        </div>
+        <div v-if="totalDiscountAmount > 0" class="line-item total mb-1">
+          <span class="item-name">{{ $t('Скидка') }}</span>
+          <span class="item-dashed"></span>
+          <span class="item-price">
+            {{ isRefund ? '-' : '' }}
+            {{ currency(totalDiscountAmount, currencyId, true) }}
+          </span>
+        </div>
+        <div v-if="deliveryFee > 0" class="line-item total mb-1">
+          <span class="item-name">{{ $t('Доставка') }}</span>
+          <span class="item-dashed"></span>
+          <span class="item-price">
+            {{ currency(deliveryFee, currencyId, true) }}
+          </span>
+        </div>
+        <div v-if="!hideTotalAmount" class="line-item total total-xl">
+          <span class="item-name">{{ $t('Итого') }}</span>
+          <span class="item-dashed"></span>
+          <span class="item-price">
+            {{ isRefund ? '-' : '' }}
+            {{ currency(totalAmount, currencyId, true) }}
+          </span>
+        </div>
+      </div>
+      <template v-else>
+        <template v-if="totalDiscountAmount > 0 && !projectRuleFinder('hide_discount_on_receipt')">
+          <div class="line-item total mb-1">
+            <span class="item-name">{{ $t('Сумма') }}</span>
+            <span class="item-dashed"></span>
+            <span class="item-price">
+              {{ isRefund ? '-' : '' }}
+              {{ currency(totalAmount + setMin(totalDiscountAmount), currencyId, true) }}
+            </span>
+          </div>
+          <div class="line-item total mb-1">
+            <span class="item-name">{{ $t('Скидка') }}</span>
+            <span class="item-dashed"></span>
+            <span class="item-price">
+              {{ isRefund ? '-' : '' }}
+              {{ currency(totalDiscountAmount, currencyId, true) }}
+            </span>
+          </div>
+        </template>
+        <div v-if="deliveryFee > 0" class="line-item total mb-1">
+          <span class="item-name">{{ $t('Доставка') }}</span>
+          <span class="item-dashed"></span>
+          <span class="item-price">
+            {{ currency(deliveryFee, currencyId, true) }}
+          </span>
+        </div>
+        <div v-if="totalDebt > 0" class="line-item total mb-1">
+          <span class="item-name">{{ $t('Долг') }}</span>
+          <span class="item-dashed"></span>
+          <span class="item-price">
+            {{ currency(totalDebt, currencyId, true) }}
+          </span>
+        </div>
+        <div class="line-item total total-xl">
+          <span class="item-name">{{ $t('Итого') }}</span>
+          <span class="item-dashed"></span>
+          <span class="item-price">
+            {{ isRefund ? '-' : '' }}
+            {{ currency(totalAmount, currencyId, true) }}
+          </span>
+        </div>
+      </template>
+
+      <div
+        v-if="isReceiptFieldVisible('paymentDetails')"
+        v-for="payment in paymentDetails"
+        :key="payment.name"
+        class="line-item total-detail"
+      >
+        <span>{{ payment.name }}</span>
+        <span class="item-dashed"></span>
+        <span>
+          {{ currency(payment.amount, currencyId, true) }}
+        </span>
+      </div>
+
+      <hr v-if="version != 'v1' && !hideBarcode" class="border-dark" />
+
+      <div
+        v-if="isReceiptFieldVisible('socialLinks')"
+        v-for="socialLink in socialLinks"
+        :key="`${socialLink.name}`"
+        class="d-inline-block text-center"
+      >
+        <div class="d-flex align-items-center flex-wrap mr-2">
+          <i :class="`${socialLink.icon} mr-1`"></i>
+          <span>{{ socialLink.name }}</span>
+        </div>
+      </div>
+
+      <div v-if="tid && !hideBarcode && isReceiptFieldVisible('barcode')" class="position-relative transaction-barcode">
+        <loader v-if="barcodeLoading" absolute />
+        <svg ref="barcode"></svg>
+      </div>
+      <div v-else-if="version != 'v1'" class="pb-20px"></div>
+    </div>
+
+    <empty-state v-else :empty-text="$t('Корзина пуста')" style="height: 300px" />
+
+    <slot name="footer" />
+
+    <div v-if="isReceiptFieldVisible('bottomText') && footerText" class="thanks">
+      <hr class="border-dark receipt-part-divider" />
+
+      <p>{{ footerText }}</p>
+    </div>
+  </div>
+</template>
+
+<script>
+import JsBarcode from 'jsbarcode';
+import _ from 'lodash';
+
+export default {
+  name: 'Receipt',
+  props: {
+    headers: {
+      type: Array,
+      default: () => [],
+    },
+    hideNumberProducts: {
+      type: Boolean,
+      default: false,
+    },
+    ripple: {
+      type: Boolean,
+      default: false,
+    },
+    logo: {
+      type: String,
+      default: '',
+    },
+    companyName: {
+      type: String,
+      default: null,
+    },
+    companyAddress: {
+      type: String,
+      default: null,
+    },
+    companyInn: {
+      type: String,
+      default: null,
+    },
+    employeeName: {
+      type: String,
+      default: '',
+    },
+    creatorEmployeeName: {
+      type: String,
+      default: '',
+    },
+    employeePhone: {
+      type: String,
+      default: '',
+    },
+    storageName: {
+      type: String,
+      default: '',
+    },
+    currencyId: {
+      type: [Number, String],
+      default: '',
+    },
+    receiptDate: {
+      type: [Number, String, Object],
+      default: '',
+    },
+    tid: {
+      type: [Number, String],
+      default: '',
+    },
+    totalDebt: {
+      type: [Number, String],
+      default: '',
+    },
+    totalAmount: {
+      type: [Number, String],
+      default: '',
+    },
+    totalDiscountAmount: {
+      type: [Number, String],
+      default: '',
+    },
+    paymentDetails: {
+      type: Array,
+      default: () => [],
+    },
+    products: {
+      type: Array,
+      default: () => [],
+    },
+    hideBarcode: {
+      type: Boolean,
+      default: false,
+    },
+    hideTotalAmount: {
+      type: Boolean,
+      default: false,
+    },
+    isRefund: {
+      type: Boolean,
+      default: false,
+    },
+    version: {
+      type: String,
+      default: null,
+    },
+    sticky: {
+      type: Boolean,
+      default: false,
+    },
+    fullHeight: {
+      type: Boolean,
+      default: false,
+    },
+    quantityKey: {
+      type: String,
+      default: 'quantity',
+    },
+    deliveryFee: {
+      type: [Number, String],
+      default: '',
+    },
+    initialPriceKey: {
+      type: String,
+      default: 'initial_price',
+    },
+    currentNumber: {
+      type: [Number, String],
+      default: null,
+    },
+    statusLabel: {
+      type: String,
+      default: null,
+    },
+    receiptSettings: {
+      type: Object,
+      default: () => ({
+        fields: {},
+        fieldOrder: [],
+        spacing: 'normal',
+        layout: { fieldsLayout: 'standard', dateFormat: 'date' },
+        texts: {},
+      }),
+    },
+  },
+  data() {
+    return {
+      submiting: false,
+      barcodeLoading: false,
+      barcodeInited: false,
+      dynamicHeight: null,
+      logoLoadFailed: false,
+    };
+  },
+  computed: {
+    receiptFields() {
+      const defaults = [
+        'orderNumber',
+        'companyAddress',
+        'companyInn',
+        'transaction',
+        'receiptDate',
+        'storageName',
+        'cashier',
+        'employee',
+        'contacts',
+        'client',
+        'clientTypeName',
+      ];
+      const order = Array.isArray(this.receiptSettings.fieldOrder)
+        ? this.receiptSettings.fieldOrder.filter((field) => defaults.includes(field))
+        : [];
+      return [...order, ...defaults.filter((field) => !order.includes(field))];
+    },
+    footerText() {
+      return this.receiptSettings.texts?.footerNotice ?? this.textToBottom;
+    },
+    socialLinks() {
+      return this.projectRuleFinder('company_info')?.socials || [];
+    },
+    textToBottom() {
+      return this.projectRuleFinder('add_text_to_bottom_of_order_receipt') || '';
+    },
+    isCompactReceipt() {
+      const configs = this.projectRuleFinder('pos_receipt_configs') || {};
+
+      return Boolean(configs.compact_receipt);
+    },
+    showLogo() {
+      return Boolean(this.logo && !this.logoLoadFailed);
+    },
+    showSubscriptionAlert() {
+      return this.user && this.user.subscription_end_days <= 3;
+    },
+    receiptDynamicStyle() {
+      if (this.version !== 'v1' || !this.sticky) return {};
+      return this.dynamicHeight ? { height: this.dynamicHeight } : {};
+    },
+  },
+  watch: {
+    logo() {
+      this.logoLoadFailed = false;
+    },
+    tid(newValue, oldValue) {
+      if (newValue) {
+        this.initBarcode();
+      }
+    },
+    'receiptSettings.fields.barcode'(isVisible) {
+      if (isVisible) {
+        this.$nextTick(() => this.initBarcode());
+      }
+    },
+  },
+  async mounted() {
+    this.initBarcode();
+    if (this.version === 'v1' && this.sticky) {
+      // Use multiple timing strategies to ensure proper initial calculation
+      this.updateReceiptHeight();
+      this.$nextTick(() => {
+        this.updateReceiptHeight();
+        // Additional delay to handle any dynamic content loading
+        setTimeout(() => this.updateReceiptHeight(), 100);
+      });
+      window.addEventListener('resize', this.debouncedUpdateHeight);
+      window.addEventListener('scroll', this.debouncedUpdateHeight, true);
+    }
+  },
+  beforeDestroy() {
+    if (this.version === 'v1' && this.sticky) {
+      window.removeEventListener('resize', this.debouncedUpdateHeight);
+      window.removeEventListener('scroll', this.debouncedUpdateHeight, true);
+    }
+  },
+  methods: {
+    isReceiptFieldVisible(field) {
+      return this.receiptSettings.fields?.[field] !== false;
+    },
+    lineTotal(product) {
+      return product.pos_line_total ?? product.price * product[this.quantityKey];
+    },
+    initialLineTotal(product) {
+      const discount = (product[this.initialPriceKey] - product.price) * product[this.quantityKey];
+      return this.lineTotal(product) + discount;
+    },
+    async initBarcode() {
+      if (!this.barcodeInited && this.tid && !this.hideBarcode) {
+        this.barcodeLoading = true;
+        setTimeout(() => {
+          const $el = this.$refs.barcode;
+          JsBarcode($el, this.tid, {
+            format: 'CODE128',
+            lineColor: '#000',
+            width: 2,
+            height: 80,
+            displayValue: false,
+          });
+          setTimeout(() => (this.barcodeLoading = false), 500);
+        }, 500);
+      }
+    },
+    hasDiscount(product) {
+      const rule = Boolean(this.projectRuleFinder('hide_discount_on_receipt') || 0);
+
+      if (rule) return false;
+
+      return (
+        product[this.initialPriceKey] !== undefined &&
+        this.roundNumber(product[this.initialPriceKey]) != this.roundNumber(product.price)
+      );
+    },
+    handleLogoError() {
+      this.logoLoadFailed = true;
+    },
+    updateReceiptHeight() {
+      if (!this.$el) return;
+
+      this.$nextTick(() => {
+        const rect = this.$el.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const topOffset = Math.max(0, rect.top);
+
+        // Calculate available height with some padding
+        const padding = 20; // 20px padding from top and bottom
+        const availableHeight = viewportHeight - topOffset - padding;
+
+        // Ensure minimum height and prevent negative values
+        const minHeight = 300; // Minimum 300px height
+        const calculatedHeight = Math.max(minHeight, availableHeight);
+
+        this.dynamicHeight = `${calculatedHeight}px`;
+      });
+    },
+
+    // Debounced version to prevent excessive calculations during scroll
+    debouncedUpdateHeight: _.debounce(function () {
+      this.updateReceiptHeight();
+    }, 16), // ~60fps
+  },
+};
+</script>
+<style lang="scss">
+@media print {
+  .body-receipt-printing {
+    -webkit-print-color-adjust: exact;
+    margin: 0;
+
+    * {
+      visibility: hidden !important;
+      max-height: 0 !important;
+    }
+
+    .receipt-printing,
+    .receipt-printing * {
+      visibility: visible !important;
+      font-size: 18px !important;
+      max-height: unset !important;
+    }
+    .receipt-printing {
+      .transaction-barcode {
+        height: 110px;
+        svg {
+          width: 100%;
+        }
+      }
+      .receipt-ordering-number {
+        margin-bottom: 30px !important;
+        .ordering-number-value {
+          font-size: 96px !important;
+          font-weight: bold !important;
+        }
+      }
+    }
+
+    .receipt .total-xl .item-name,
+    .receipt .total-xl .item-price {
+      font-size: 25px !important;
+    }
+    .receipt {
+      position: absolute;
+      left: 0 !important;
+      top: 0 !important;
+      width: 100%;
+      max-width: 100% !important;
+      padding: 0 !important;
+      box-shadow: unset !important;
+    }
+
+    .receipt {
+      page-break-inside: avoid;
+      page-break-after: always;
+      width: 100%;
+    }
+
+    .line-item,
+    .total-container {
+      page-break-inside: avoid;
+    }
+
+    .receipt-header {
+      margin-bottom: 0 !important;
+    }
+    .receipt-header img {
+      width: 100% !important;
+    }
+  }
+}
+</style>
+<style lang="scss">
+.transaction-barcode {
+  height: 110px;
+  svg {
+    width: 100%;
+  }
+}
+.receipt {
+  max-width: 450px;
+  background-color: #fff !important;
+  z-index: 9999999999;
+  padding: 20px;
+  padding-bottom: 0 !important;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  p {
+    margin-bottom: 0.25rem;
+  }
+  hr {
+    margin: 0.5rem 0 !important;
+  }
+}
+.receipt--compact {
+  p {
+    margin: 0;
+  }
+  hr {
+    margin: 0.2rem !important;
+  }
+  .receipt-status {
+    margin: 4px;
+  }
+  .line-item .item-name {
+    margin: 0 !important;
+  }
+}
+.receipt-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.receipt--fields-layout-space-between .receipt-block--header > p {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.receipt-date--centered {
+  text-align: center;
+}
+.receipt--spacing-compact .line-item * {
+  margin-bottom: 0;
+  line-height: 16px;
+}
+.receipt--spacing-compact .line-item .item-dashed {
+  margin: auto 0.8rem;
+}
+.receipt--spacing-compact .receipt-block--header > p {
+  margin-bottom: 0;
+  line-height: 16px;
+}
+.receipt--spacing-compact hr {
+  margin: 0.25rem 0 !important;
+}
+.receipt--spacing-compact .receipt-header {
+  margin-bottom: 10px;
+}
+.receipt--spacing-compact .receipt-ordering-number {
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+.receipt--spacing-compact .total-container {
+  margin-top: 5px;
+}
+.receipt--spacing-compact .contact-info,
+.receipt--spacing-compact .barcode {
+  margin-top: 10px;
+}
+.receipt--spacing-compact .receipt-status,
+.receipt--spacing-compact .receipt-refund-label {
+  margin-bottom: 6px;
+}
+.receipt--spacing-compact .thanks {
+  line-height: 16px;
+  padding-bottom: 2.5px;
+}
+.receipt--spacing-compact .thanks p {
+  margin-bottom: 0;
+}
+.receipt-header img {
+  width: 150px;
+}
+.receipt-status {
+  margin-bottom: 12px;
+  padding: 8px;
+  border: 2px solid #1e2022;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+}
+.receipt-refund-label {
+  margin-bottom: 12px;
+  padding: 8px;
+  border: 2px solid #e55353;
+  color: #e55353;
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+}
+.receipt-ordering-number {
+  text-align: center;
+  margin-bottom: 20px;
+  margin-top: 10px;
+}
+.ordering-number-value {
+  display: inline-block;
+  font-size: 48px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.line-item {
+  display: flex;
+  flex-wrap: wrap;
+  // margin-bottom: 10px;
+  font-size: 12px;
+}
+.line-item p {
+  margin: 0;
+}
+.line-item .item-name {
+  display: inline-block;
+  width: 100%;
+  font-weight: bold;
+}
+.item-dashed {
+  display: inline-block;
+  flex: 1 1 auto;
+  border-top: 1px dashed #0b0c0c;
+  align-self: center;
+  margin: auto 0.8rem;
+  // height: 2px;
+}
+.line-item .item-qty {
+  display: inline-block;
+  // flex: 1 1 auto;
+  text-align: left;
+}
+.line-item .item-price {
+  display: inline-block;
+  text-align: right;
+  white-space: nowrap;
+  font-weight: bold;
+}
+.total-xl {
+  * {
+    font-size: 16px;
+  }
+}
+.total {
+  font-weight: bold;
+  font-size: 12px;
+  .item-name {
+    width: auto !important;
+  }
+}
+.total-detail {
+  font-size: 12px;
+  .item-name {
+    width: auto !important;
+  }
+}
+.total-container {
+  margin-top: 10px;
+}
+.contact-info {
+  margin-top: 20px;
+  text-align: center;
+}
+.contact-info a {
+  color: #333;
+  margin: 0 5px;
+}
+.barcode {
+  text-align: center;
+  margin-top: 20px;
+}
+.thanks {
+  text-align: center;
+  // margin-top: 5px;
+  margin-bottom: 15px;
+  letter-spacing: 1px;
+  font-size: 14px;
+
+  p {
+    white-space: pre-line;
+  }
+}
+
+.receipt-v1 {
+  position: sticky;
+  top: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-flow: column;
+  z-index: 10;
+  // box-shadow: 0px 6px 12px rgba(140, 152, 164, 0.075) !important;
+  // border: 0.0625rem solid rgba(231, 234, 243, 0.7);
+  padding: 0 !important;
+  .receipt-part-divider {
+    display: none;
+  }
+  .item-dashed {
+    border-top: unset;
+  }
+  .receipt-products {
+    overflow: auto;
+    // .item-qty,
+    // .item-price,
+    // .item-discount,
+    // .item-price-without-discount {
+    //   color: #8c98a4 !important;
+    //   font-style: italic;
+    // }
+    .line-item {
+      cursor: pointer;
+      padding: 0.8rem 20px;
+      font-size: 16px !important;
+      &:hover {
+        background-color: rgba(37, 99, 235, 0.1) !important;
+      }
+    }
+  }
+  .total-container {
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 1rem;
+    margin-top: auto !important;
+    .line-item.total {
+      font-size: 16px !important;
+    }
+    .line-item.total.total-xl {
+      font-size: 20px !important;
+      * {
+        font-size: 22px !important;
+      }
+    }
+    hr {
+      margin: 2px 0px !important;
+    }
+  }
+  hr {
+    border-color: rgba(231, 234, 243, 0.7) !important;
+    margin: 2px 20px !important;
+  }
+}
+.pi-qty-counter {
+  // margin-top: auto !important;
+  display: flex;
+  align-items: center;
+  column-gap: 15px;
+  justify-content: space-between;
+}
+</style>
+

@@ -16,6 +16,7 @@ dependencies:
   shelf: ^1.4.2
   shelf_router: ^1.1.4
   printing: ^5.14.3
+  pdf: ^3.12.0
   esc_pos_utils_plus: ^2.0.4
   win32: ^6.4.0
   http: ^1.6.0

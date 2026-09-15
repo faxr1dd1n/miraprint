@@ -24,6 +24,11 @@ Future<List<int>> buildReceiptBytes(
     bytes += generator.reset();
   }
 
+  // Sinov bilan tasdiqlandi: buzilish logoning o'ziga emas, balki
+  // reset'dan keyin ENG BIRINCHI yuboriladigan rasmga bog'liq (printer/USB
+  // ulanishi hali "uyg'onmagan"). Shuning uchun logoni saytdagi tabiiy
+  // o'rniga (boshiga) qaytardik — haqiqiy himoya endi ulanish darajasida,
+  // `mac_raw_printer_connection.dart`dagi kutishda.
   if (receipt.logo.isNotEmpty) {
     final logoImage = await loadLogoImage(receipt.logo);
     if (logoImage != null) {
