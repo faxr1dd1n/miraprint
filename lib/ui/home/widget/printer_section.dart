@@ -9,6 +9,7 @@ import 'package:miraprint/model/receipt/social_link.dart';
 import 'package:miraprint/model/receipt/total_item.dart';
 import 'package:miraprint/service/printer/mac_printer_lister.dart';
 import 'package:miraprint/service/printer/printer_connection.dart';
+import 'package:miraprint/service/printer/windows_cut_sender.dart';
 import 'package:miraprint/service/receipt/receipt_builder.dart';
 import 'package:miraprint/service/receipt/receipt_pdf_builder.dart';
 import 'package:miraprint/ui/home/widget/result_banner.dart';
@@ -70,6 +71,7 @@ class _PrinterSectionState extends State<PrinterSection> {
         if (!success) {
           throw Exception('Chop etib bo\'lmadi: ${printer.name}');
         }
+        await sendWindowsCutCommand(printer.name);
       } else {
         final bytes = await buildReceiptBytes(_sampleReceipt());
         await PrinterConnection.forPlatform(printer.name).sendRaw(bytes);

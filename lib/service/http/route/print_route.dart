@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:miraprint/model/printer/print_request.dart';
 import 'package:miraprint/model/printer/print_response.dart';
 import 'package:miraprint/service/printer/printer_connection.dart';
+import 'package:miraprint/service/printer/windows_cut_sender.dart';
 import 'package:miraprint/service/receipt/last_receipt_notifier.dart';
 import 'package:miraprint/service/receipt/receipt_builder.dart';
 import 'package:miraprint/service/receipt/receipt_pdf_builder.dart';
@@ -71,6 +72,7 @@ Future<void> _sendToPrinter(PrintRequest printRequest) async {
     if (!success) {
       throw Exception('Chop etib bo\'lmadi: ${printRequest.printer.name}');
     }
+    await sendWindowsCutCommand(printRequest.printer.name);
     return;
   }
 

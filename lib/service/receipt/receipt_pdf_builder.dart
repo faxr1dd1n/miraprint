@@ -13,13 +13,18 @@ import '../../model/receipt/receipt_settings.dart';
 import '../../model/receipt/social_link.dart';
 import 'social_icon_assets.dart';
 
-// message.txt'dagi aniq qoidalar — `receipt_preview.dart` bilan bir xil
-// (Receipt.vue): header/item qatori/totals 12px, Итого 16px, status 20px,
-// footer (`.thanks`) 14px.
-const _baseFontSize = 12.0;
-const _totalBigFontSize = 16.0;
-const _statusFontSize = 20.0;
-const _footerFontSize = 14.0;
+// message.txt'dagi aniq qoidalar (px) — `receipt_preview.dart` bilan bir
+// xil: header/item qatori/totals 12px, Итого 16px, status 20px, footer
+// (`.thanks`) 14px. PDF'da o'lcham birligi PUNKT (pt), CSS esa PIKSEL
+// (px) — 96 CSS-px/dyum va 72pt/dyum asosida `1px = 0.75pt`. Shu
+// koeffitsientsiz hammasi taxminan 33% kattaroq chiqqan edi.
+const _pxToPt = 0.75;
+double pt(double px) => px * _pxToPt;
+
+const _baseFontSize = 12.0 * _pxToPt;
+const _totalBigFontSize = 16.0 * _pxToPt;
+const _statusFontSize = 20.0 * _pxToPt;
+const _footerFontSize = 14.0 * _pxToPt;
 
 /// Windows uchun: chekni PDF sifatida quradi, so'ng `Printing.directPrintPdf`
 /// orqali OS print-spooleri/drayveriga yuboriladi (`PLAN.md`, Bosqich 12,
@@ -80,8 +85,8 @@ List<pw.Widget> _buildContent(
   Map<SocialLink, String> socialSvgs,
 ) {
   final isCompact = settings?.spacing == 'compact';
-  double zeroInCompact(double normal) => isCompact ? 0 : normal;
-  double halveInCompact(double normal) => isCompact ? normal / 2 : normal;
+  double zeroInCompact(double px) => isCompact ? 0 : pt(px);
+  double halveInCompact(double px) => pt(isCompact ? px / 2 : px);
 
   final dateFormat = settings?.layout.dateFormat ?? 'date';
   final isCentered = isCenteredDateFormat(dateFormat);
@@ -102,7 +107,11 @@ List<pw.Widget> _buildContent(
 
   if (logoBytes != null) {
     widgets
-      ..add(pw.Center(child: pw.Image(pw.MemoryImage(logoBytes), height: 60)))
+      ..add(
+        pw.Center(
+          child: pw.Image(pw.MemoryImage(logoBytes), height: pt(60)),
+        ),
+      )
       ..add(pw.SizedBox(height: halveInCompact(8)));
   }
 
@@ -119,14 +128,14 @@ List<pw.Widget> _buildContent(
       ..add(pw.SizedBox(height: halveInCompact(8)));
   }
 
-  // Receipt.vue: `.receipt-status` — ramka, katta harflar, qalin.
+  // Receipt.vue: `.receipt-status` — ramka (2px), katta harflar, qalin.
   if (statusHeader != null && statusHeader.val.isNotEmpty) {
     widgets
       ..add(
         pw.Container(
-          padding: const pw.EdgeInsets.all(8),
+          padding: pw.EdgeInsets.all(pt(8)),
           decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: PdfColors.black, width: 1.5),
+            border: pw.Border.all(color: PdfColors.black, width: pt(2)),
           ),
           alignment: pw.Alignment.center,
           child: pw.Text(
@@ -153,7 +162,7 @@ List<pw.Widget> _buildContent(
           child: pw.Text(
             receipt.currentNumber,
             style: pw.TextStyle(
-              fontSize: 32,
+              fontSize: pt(32),
               fontWeight: pw.FontWeight.bold,
             ),
           ),
@@ -226,8 +235,8 @@ List<pw.Widget> _buildContent(
       pw.Padding(
         padding: pw.EdgeInsets.only(top: halveInCompact(8)),
         child: pw.Wrap(
-          spacing: 12,
-          runSpacing: 8,
+          spacing: pt(12),
+          runSpacing: pt(8),
           children: [
             for (final social in receipt.socials)
               pw.Row(
@@ -236,10 +245,10 @@ List<pw.Widget> _buildContent(
                   if (socialSvgs[social] != null)
                     pw.SvgImage(
                       svg: socialSvgs[social]!,
-                      width: 12,
-                      height: 12,
+                      width: pt(12),
+                      height: pt(12),
                     ),
-                  pw.SizedBox(width: 6),
+                  pw.SizedBox(width: pt(6)),
                   pw.Text(
                     social.title,
                     style: const pw.TextStyle(fontSize: _baseFontSize),
@@ -254,15 +263,17 @@ List<pw.Widget> _buildContent(
 
   if (receipt.barcode.isNotEmpty) {
     widgets
-      ..add(pw.SizedBox(height: 12))
+      ..add(pw.SizedBox(height: pt(12)))
       ..add(
+        // Receipt.vue: `JsBarcode(..., { displayValue: false })` — barcode
+        // ostida raqamli matn KO'RSATILMAYDI.
         pw.Center(
           child: pw.BarcodeWidget(
             data: receipt.barcode,
             barcode: pw.Barcode.code128(),
-            drawText: true,
-            width: 200,
-            height: 60,
+            drawText: false,
+            width: pt(200),
+            height: pt(60),
           ),
         ),
       );
@@ -279,7 +290,7 @@ List<pw.Widget> _buildContent(
         pw.Text(
           footerNotice,
           textAlign: pw.TextAlign.center,
-          style: pw.TextStyle(fontSize: _footerFontSize, letterSpacing: 1),
+          style: pw.TextStyle(fontSize: _footerFontSize, letterSpacing: pt(1)),
         ),
       );
   }
@@ -334,10 +345,12 @@ pw.Widget _priceRow(
   );
 }
 
+/// `verticalMargin` chaqiruvchi tomonidan allaqachon `pt(...)` bilan
+/// o'girilgan holda keladi (`zeroInCompact`/`halveInCompact`).
 pw.Widget _divider(double verticalMargin) {
   return pw.Divider(
-    height: verticalMargin * 2 + 1,
-    thickness: 1,
+    height: verticalMargin * 2 + pt(1),
+    thickness: pt(1),
     color: PdfColors.black,
   );
 }
