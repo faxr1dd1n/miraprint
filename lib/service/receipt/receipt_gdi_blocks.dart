@@ -207,13 +207,13 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
       'items': items,
       'spacing': pt(12),
       'runSpacing': pt(8),
-      'iconGap': pt(6),
+      'iconGap': pt(4),
     });
   }
 
   if (receipt.barcode.isNotEmpty) {
     blocks
-      ..add(_spacer(pt(12)))
+      ..add(_spacer(pt(10)))
       ..add({
         'type': 'barcodeBars',
         // Receipt.vue: `JsBarcode(..., { displayValue: false })` — barcode
@@ -233,7 +233,8 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
             .toList(),
         'totalWidth': pt(120),
         'totalHeight': pt(80),
-      });
+      })
+      ..add(_spacer(pt(10)));
   }
 
   // Receipt.vue `.thanks`: markazlashgan, letter-spacing:1px.
