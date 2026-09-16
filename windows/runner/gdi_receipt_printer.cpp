@@ -199,8 +199,12 @@ float DrawOrMeasureParagraph(Gdiplus::Graphics& g, Gdiplus::SolidBrush& brush,
                              Gdiplus::Font& font, const std::wstring& text,
                              float x, float y, float maxWidth,
                              const std::string& align, float letterSpacing,
-                             bool actuallyDraw) {
-  float lineHeight = font.GetHeight(&g);
+                             bool actuallyDraw, float lineGap = 0.0f) {
+  // `lineGap` — header itemlaridagi bo'shliq bilan bir xil naqsh: shrift
+  // balandligining o'ziga tegilmaydi, faqat qatorlar orasiga qo'shimcha
+  // bo'shliq qo'shiladi, compact rejimda bu `zeroInCompact(...)` orqali
+  // nolga tushadi (`receipt_gdi_blocks.dart`).
+  float lineHeight = font.GetHeight(&g) + lineGap;
   float cursorY = y;
 
   for (const auto& paragraph : SplitParagraphs(text)) {
@@ -281,11 +285,13 @@ void DrawBlock(Gdiplus::Graphics& g, Gdiplus::SolidBrush& blackBrush,
     bool bold = GetBool(block, "bold");
     std::string align = GetStr(block, "align", "left");
     float letterSpacing = static_cast<float>(GetNum(block, "letterSpacing"));
+    float lineGap = static_cast<float>(GetNum(block, "lineGap"));
     auto fontOwner = MakeFont(fontSize, bold);
     auto& font = *fontOwner;
     auto text = Utf8ToWide(GetStr(block, "text"));
     cursorY += DrawOrMeasureParagraph(g, blackBrush, font, text, 0, cursorY,
-                                      contentWidth, align, letterSpacing, true);
+                                      contentWidth, align, letterSpacing, true,
+                                      lineGap);
     return;
   }
 
@@ -384,19 +390,28 @@ void DrawBlock(Gdiplus::Graphics& g, Gdiplus::SolidBrush& blackBrush,
     float naturalW = static_cast<float>(bitmap->GetWidth());
     float naturalH = static_cast<float>(bitmap->GetHeight());
     float width = naturalH > 0 ? height * (naturalW / naturalH) : height;
+
+    // C#dagi `DrawLogoFromUrl` bilan bir xil "ikkala tomondan cheklash"
+    // mantiqi: aspekt nisbati saqlanib, `maxWidth` (agar berilgan bo'lsa)
+    // dan oshsa, kenglik bo'yicha qayta hisoblanadi.
+    float maxWidth = static_cast<float>(GetNum(block, "maxWidth", -1));
+    if (maxWidth > 0 && width > maxWidth) {
+      width = maxWidth;
+      height = naturalW > 0 ? maxWidth * (naturalH / naturalW) : height;
+    }
     float x = (contentWidth - width) / 2;
 
-    // MUHIM: bu bitmap (`receipt_gdi_blocks.dart`da) allaqachon Dart
-    // tomonida qattiq qora/oq (Floyd-Steinberg) dithering qilingan —
-    // `HighQualityBicubic` kabi silliqlashtiruvchi interpolyatsiya bu
-    // aniq naqshni yana kulrang piksellarga "erib" ketkazadi (bu aynan
-    // matn xiraligiga olib kelgan xato bilan bir xil ildiz). Shuning
-    // uchun bu yerda ataylab `NearestNeighbor` ishlatiladi — dithering
-    // natijasi o'zgarishsiz saqlanadi.
+    // C#dagi kabi: dithering yo'q, faqat yuqori sifatli interpolyatsiya —
+    // qattiq qora/oq dithering sinalgan edi (2026-09-16), lekin logotipni
+    // "shovqinli" qilib yomonlashtirdi (aslida muammo kichik o'lcham edi,
+    // yuqoridagi `height`/`maxWidth` C#ga mos kattalashtirildi).
     auto oldInterp = g.GetInterpolationMode();
-    g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
+    auto oldSmoothing = g.GetSmoothingMode();
+    g.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
+    g.SetSmoothingMode(Gdiplus::SmoothingModeHighQuality);
     g.DrawImage(bitmap, Gdiplus::RectF(x, cursorY, width, height));
     g.SetInterpolationMode(oldInterp);
+    g.SetSmoothingMode(oldSmoothing);
 
     cursorY += height;
     return;

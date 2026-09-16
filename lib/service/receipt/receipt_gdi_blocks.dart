@@ -28,7 +28,7 @@ double pt(double px) => px * _pxToPt;
 const _baseFontSize = 12.0 * _pxToPt; // mahsulot nomi, oddiy totals
 // Header sarlavha/qiymat va ijtimoiy tarmoq matni — saytdagidan farqli
 // o'laroq, foydalanuvchi tasdiqlagan holda 12px emas, 14px (2026-09-16).
-const _labelFontSize = 14.0 * _pxToPt;
+const _labelFontSize = 12.0 * _pxToPt;
 const _totalBigFontSize = 16.0 * _pxToPt; // Итого
 const _statusFontSize = 16.0 * _pxToPt;
 const _footerFontSize = 12.0 * _pxToPt;
@@ -67,9 +67,23 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
   if (receipt.logo.isNotEmpty) {
     final logoBytes = await _downloadBytes(receipt.logo);
     if (logoBytes != null) {
-      final printBytes = _ditherToBlackWhite(logoBytes) ?? logoBytes;
+      // C#dagi `DrawLogoFromUrl` (`MainForm.cs`) bilan bir xil: hech qanday
+      // oldindan qayta ishlash (dithering) yo'q — asl bayt, native tomonda
+      // `HighQualityBicubic` bilan chiziladi. Dithering (2026-09-16)
+      // sinalgan edi, lekin logotipni "shovqinli" qilib yomonlashtirdi —
+      // asl muammo dithering emas, balki o'lcham juda kichik bo'lgani edi
+      // (pastga qarang, C#dagi haqiqiy maksimal o'lchamlarga moslandi).
       blocks
-        ..add({'type': 'image', 'bytes': printBytes, 'height': pt(60)})
+        ..add({
+          'type': 'image',
+          'bytes': logoBytes,
+          // C#: logoMaxHeight=140 (1/100in) = 1.4in, logoMaxWidth=260
+          // (1/100in) = 2.6in — aspekt nisbati saqlanib, ikkalasidan
+          // qaysi biri avval cheklasa o'shanga moslanadi (native
+          // tomonda amalga oshiriladi).
+          'height': 1.4 * 72,
+          'maxWidth': 2.6 * 72,
+        })
         ..add(_spacer(halveInCompact(8)));
     }
   }
@@ -205,7 +219,7 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
     blocks.add({
       'type': 'socialRow',
       'items': items,
-      'spacing': pt(12),
+      'spacing': pt(10),
       'runSpacing': pt(8),
       'iconGap': pt(4),
     });
@@ -234,7 +248,7 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
         'totalWidth': pt(120),
         'totalHeight': pt(80),
       })
-      ..add(_spacer(pt(10)));
+      ..add(_spacer(pt(8)));
   }
 
   // Receipt.vue `.thanks`: markazlashgan, letter-spacing:1px.
@@ -250,6 +264,10 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
           fontSize: _footerFontSize,
           align: 'center',
           letterSpacing: pt(1),
+          // Header itemlaridagi bilan bir xil naqsh (`zeroInCompact(4)`) —
+          // compact rejimda footer matnining ichki qatorlari orasidagi
+          // qo'shimcha bo'shliq ham nolga tushadi.
+          lineGap: zeroInCompact(4),
         ),
       );
   }
@@ -263,6 +281,7 @@ Map<String, Object?> _text(
   bool bold = false,
   String align = 'left',
   double letterSpacing = 0,
+  double lineGap = 0,
 }) => {
   'type': 'text',
   'text': text,
@@ -270,6 +289,7 @@ Map<String, Object?> _text(
   'bold': bold,
   'align': align,
   'letterSpacing': letterSpacing,
+  'lineGap': lineGap,
 };
 
 Map<String, Object?> _spacer(double height) => {
@@ -281,12 +301,7 @@ Map<String, Object?> _spacer(double height) => {
 Map<String, Object?> _divider(double verticalMargin) => {
   'type': 'divider',
   'margin': verticalMargin,
-  // Eski PDF/PDFium yo'lida CSS asosidagi 1px (pt(1)=0.75pt) haddan
-  // tashqari qalin chiqqani uchun yarmiga tushirilgan edi (0.375) — lekin
-  // native GDI+ yo'lida (2026-09-16) aksincha, chiziqlar juda ingichka/xira
-  // chiqdi (GDI+ pen sub-piksel kenglikda thermal printerda zaif chiqadi),
-  // shuning uchun CSS'dagi asl 1px qiymatiga qaytarildi.
-  'thickness': pt(0.7),
+  'thickness': pt(1),
 };
 
 /// Eski C# ilovadagi `DownloadLogoAsync` bilan bir xil: har qanday xatoda
@@ -301,38 +316,6 @@ Future<Uint8List?> _downloadBytes(String url) async {
   } catch (_) {
     return null;
   }
-}
-
-/// Rasm/logotipni qattiq qora/oq (Floyd-Steinberg) dithering bilan
-/// qayta ishlaydi — sabab: anti-aliased/rangli piksellarni GDI+ o'zi
-/// (`InterpolationModeHighQualityBicubic`) yoki printer drayveri qayta
-/// "silliqlab" dithering qilsa, natija xira/kulrang chiqadi (aynan matn
-/// xiraligining sababi bo'lgan muammo bilan bir xil ildiz — endi native
-/// tomon bu rasmni `NearestNeighbor` bilan, silliqlashtirmasdan chizadi).
-/// Xato bo'lsa (buzuq rasm) `null` qaytaradi — chaqiruvchi asl baytlarga
-/// tushadi.
-Uint8List? _ditherToBlackWhite(Uint8List sourceBytes) {
-  final decoded = img.decodeImage(sourceBytes);
-  if (decoded == null) return null;
-
-  // ~203dpi termal printerdagi taxminiy o'lchamga yaqin, ortiqcha
-  // shovqinsiz dithering uchun etarli zichlik.
-  const targetHeight = 180;
-  final resized = decoded.height > targetHeight
-      ? img.copyResize(
-          decoded,
-          height: targetHeight,
-          interpolation: img.Interpolation.average,
-        )
-      : decoded;
-
-  final dithered = img.ditherImage(
-    resized,
-    quantizer: img.BinaryQuantizer(),
-    kernel: img.DitherKernel.floydSteinberg,
-  );
-
-  return Uint8List.fromList(img.encodePng(dithered));
 }
 
 /// Ijtimoiy tarmoq ikonkasi SVG'sini kichik PNG rastriga aylantiradi (GDI+
