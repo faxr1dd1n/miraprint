@@ -84,7 +84,7 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
           'height': 1.4 * 72,
           'maxWidth': 2.6 * 72,
         })
-        ..add(_spacer(halveInCompact(8)));
+        ..add(_spacer(halveInCompact(14)));
     }
   }
 
@@ -109,6 +109,9 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
         'fontSize': _statusFontSize,
         'padding': pt(8),
         'borderWidth': pt(2),
+        // Ramka endi butun kenglikni emas, shu nisbatni egallaydi va
+        // markazlashtiriladi (foydalanuvchi qarori, 2026-09-16).
+        'widthFraction': 0.8,
       })
       ..add(_spacer(halveInCompact(12)));
   }

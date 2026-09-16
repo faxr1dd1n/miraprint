@@ -350,19 +350,26 @@ void DrawBlock(Gdiplus::Graphics& g, Gdiplus::SolidBrush& blackBrush,
     float fontSize = static_cast<float>(GetNum(block, "fontSize", 12));
     float padding = static_cast<float>(GetNum(block, "padding"));
     float borderWidth = static_cast<float>(GetNum(block, "borderWidth", 2));
+    // Ramka endi butun kenglikni emas, shu nisbatni egallaydi (masalan
+    // 0.8 = 80%) va markazlashtiriladi (foydalanuvchi qarori, 2026-09-16).
+    float widthFraction =
+        static_cast<float>(GetNum(block, "widthFraction", 1.0));
+    float boxWidth = contentWidth * widthFraction;
+    float boxX = (contentWidth - boxWidth) / 2;
+
     auto fontOwner = MakeFont(fontSize, true);
     auto& font = *fontOwner;
     auto text = Utf8ToWide(GetStr(block, "text"));
 
-    float innerWidth = contentWidth - 2 * (padding + borderWidth);
+    float innerWidth = boxWidth - 2 * (padding + borderWidth);
     float textHeight = DrawOrMeasureParagraph(g, blackBrush, font, text, 0, 0,
                                               innerWidth, "center", 0, false);
     float boxHeight = textHeight + 2 * (padding + borderWidth);
 
     Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 0), borderWidth);
-    g.DrawRectangle(&pen, 0.0f, cursorY, contentWidth, boxHeight);
+    g.DrawRectangle(&pen, boxX, cursorY, boxWidth, boxHeight);
 
-    DrawOrMeasureParagraph(g, blackBrush, font, text, padding + borderWidth,
+    DrawOrMeasureParagraph(g, blackBrush, font, text, boxX + padding + borderWidth,
                            cursorY + padding + borderWidth, innerWidth,
                            "center", 0, true);
     cursorY += boxHeight;
