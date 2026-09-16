@@ -3,6 +3,8 @@
 
 #include <flutter/dart_project.h>
 #include <flutter/flutter_view_controller.h>
+#include <flutter/method_channel.h>
+#include <flutter/standard_method_codec.h>
 
 #include <memory>
 
@@ -28,6 +30,13 @@ class FlutterWindow : public Win32Window {
 
   // The Flutter instance hosted by this window.
   std::unique_ptr<flutter::FlutterViewController> flutter_controller_;
+
+  // `receipt_gdi_printer.dart`dan chek chop etish so'rovlarini qabul qiladi
+  // (`gdi_receipt_printer.cpp`, GDI+ orqali PDF'siz to'g'ridan-to'g'ri
+  // printer drayveriga chizadi — chek matnining xira chiqishining sababi
+  // aynan PDF/PDFium bosqichi edi).
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
+      gdi_print_channel_;
 };
 
 #endif  // RUNNER_FLUTTER_WINDOW_H_

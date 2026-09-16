@@ -8,6 +8,7 @@ project(runner LANGUAGES CXX)
 # Any new source files that you add to the application should be added here.
 add_executable(${BINARY_NAME} WIN32
   "flutter_window.cpp"
+  "gdi_receipt_printer.cpp"
   "main.cpp"
   "utils.cpp"
   "win32_window.cpp"
@@ -34,6 +35,11 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 # dependencies here.
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)
 target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib")
+# Chekni GDI+ orqali to'g'ridan-to'g'ri printer drayveriga chizish uchun
+# (`gdi_receipt_printer.cpp`) — C#dagi `PrintDocument`ga mos yo'l.
+# `ole32.lib` — `CreateStreamOnHGlobal` (rasmlarni GDI+ ga xotiradan
+# uzatish) uchun.
+target_link_libraries(${BINARY_NAME} PRIVATE "gdiplus.lib" "ole32.lib")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
 # Run the Flutter tool portions of the build. This must not be removed.

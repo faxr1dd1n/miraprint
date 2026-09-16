@@ -2,6 +2,8 @@
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
 
+#include <gdiplus.h>
+
 #include <string>
 
 #include "flutter_window.h"
@@ -37,10 +39,36 @@ void RegisterAppForStartup() {
   RegCloseKey(key);
 }
 
+// Ilova bittadan ortiq marta ishga tushmasligi uchun: nomlangan mutex bilan
+// tekshiriladi. Agar allaqachon bitta nusxa ishlab turgan bo'lsa (masalan,
+// oyna X tugmasi bilan tray'ga yashirilgan bo'lsa-yu, foydalanuvchi ilovani
+// yana ochsa), yangi process o'z oynasini/tray ikonkasini yaratmasdan,
+// eskisini oldinga chiqarib, darhol chiqib ketadi — shu bilan tray'da
+// bir nechta "Miraprint" ikonkasi to'planib qolishining oldi olinadi.
+bool BringExistingInstanceToFront() {
+  HWND existing = ::FindWindowW(nullptr, L"miraprint");
+  if (existing == nullptr) {
+    return false;
+  }
+  ::ShowWindow(existing, SW_SHOW);
+  ::ShowWindow(existing, SW_RESTORE);
+  ::SetForegroundWindow(existing);
+  return true;
+}
+
 }  // namespace
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
+  HANDLE single_instance_mutex =
+      ::CreateMutexW(nullptr, TRUE, L"Miraprint_SingleInstanceMutex");
+  if (single_instance_mutex != nullptr &&
+      ::GetLastError() == ERROR_ALREADY_EXISTS) {
+    BringExistingInstanceToFront();
+    ::CloseHandle(single_instance_mutex);
+    return EXIT_SUCCESS;
+  }
+
   // Attach to console when present (e.g., 'flutter run') or create a
   // new console when running with a debugger.
   if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {
@@ -50,6 +78,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // Initialize COM, so that it is available for use in the library and/or
   // plugins.
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
+  // Chekni GDI+ orqali to'g'ridan-to'g'ri printer drayveriga chizish uchun
+  // (`gdi_receipt_printer.cpp`) — butun process davomida bitta token bilan
+  // ishga tushiriladi/to'xtatiladi.
+  Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+  ULONG_PTR gdiplusToken;
+  Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
 
   flutter::DartProject project(L"data");
 
@@ -84,6 +119,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     ::DispatchMessage(&msg);
   }
 
+  Gdiplus::GdiplusShutdown(gdiplusToken);
   ::CoUninitialize();
   return EXIT_SUCCESS;
 }

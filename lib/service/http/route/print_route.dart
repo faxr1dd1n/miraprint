@@ -3,12 +3,11 @@ import 'dart:io';
 
 import 'package:miraprint/model/printer/print_request.dart';
 import 'package:miraprint/model/printer/print_response.dart';
+import 'package:miraprint/service/printer/gdi_receipt_printer.dart';
 import 'package:miraprint/service/printer/printer_connection.dart';
 import 'package:miraprint/service/printer/windows_cut_sender.dart';
 import 'package:miraprint/service/receipt/last_receipt_notifier.dart';
 import 'package:miraprint/service/receipt/receipt_builder.dart';
-import 'package:miraprint/service/receipt/receipt_pdf_builder.dart';
-import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 import 'package:shelf/shelf.dart';
 
@@ -39,7 +38,8 @@ Future<Response> handlePostPrint(Request request) async {
   }
 }
 
-/// Windows'da OS print-spooleri/drayveri orqali (PDF), boshqa
+/// Windows'da OS print-drayveriga to'g'ridan-to'g'ri GDI+ orqali (C#dagi
+/// `PrintDocument` yo'liga mos — `gdi_receipt_printer.dart`), boshqa
 /// platformalarda (hozircha faqat macOS — dasturchi test muhiti) xom
 /// ESC/POS bayt orqali chop etadi.
 ///
@@ -53,25 +53,20 @@ Future<Response> handlePostPrint(Request request) async {
 Future<void> _sendToPrinter(PrintRequest printRequest) async {
   if (Platform.isWindows) {
     final printers = await Printing.listPrinters();
-    final printer = printers.firstWhere(
+    final printerExists = printers.any(
       (p) => p.name == printRequest.printer.name,
-      orElse: () => throw Exception(
-        'Printer OS drayver ro\'yxatida topilmadi: ${printRequest.printer.name}',
-      ),
     );
+    if (!printerExists) {
+      throw Exception(
+        'Printer OS drayver ro\'yxatida topilmadi: ${printRequest.printer.name}',
+      );
+    }
 
-    final pdfBytes = await buildReceiptPdf(
-      printRequest.check,
+    await printReceiptViaGdi(
+      printerName: printRequest.printer.name,
+      receipt: printRequest.check,
       settings: printRequest.receiptSettings,
     );
-    final success = await Printing.directPrintPdf(
-      printer: printer,
-      format: PdfPageFormat.roll80,
-      onLayout: (_) async => pdfBytes,
-    );
-    if (!success) {
-      throw Exception('Chop etib bo\'lmadi: ${printRequest.printer.name}');
-    }
     await sendWindowsCutCommand(printRequest.printer.name);
     return;
   }

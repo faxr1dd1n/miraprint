@@ -7,14 +7,13 @@ import 'package:miraprint/model/receipt/receipt_data.dart';
 import 'package:miraprint/model/receipt/receipt_item.dart';
 import 'package:miraprint/model/receipt/social_link.dart';
 import 'package:miraprint/model/receipt/total_item.dart';
+import 'package:miraprint/service/printer/gdi_receipt_printer.dart';
 import 'package:miraprint/service/printer/mac_printer_lister.dart';
 import 'package:miraprint/service/printer/printer_connection.dart';
 import 'package:miraprint/service/printer/windows_cut_sender.dart';
 import 'package:miraprint/service/receipt/receipt_builder.dart';
-import 'package:miraprint/service/receipt/receipt_pdf_builder.dart';
 import 'package:miraprint/ui/home/widget/result_banner.dart';
 import 'package:miraprint/ui/home/widget/section_card.dart';
-import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 
 class PrinterSection extends StatefulWidget {
@@ -62,15 +61,12 @@ class _PrinterSectionState extends State<PrinterSection> {
       if (Platform.isWindows) {
         // Bosqich 12 (2026-09-15): Windows'da production OS drayveri
         // orqali chop etadi — Test Print ham aynan shu yo'lni sinaydi.
-        final pdfBytes = await buildReceiptPdf(_sampleReceipt());
-        final success = await Printing.directPrintPdf(
-          printer: printer,
-          format: PdfPageFormat.roll80,
-          onLayout: (_) async => pdfBytes,
+        // GDI+ orqali to'g'ridan-to'g'ri chizadi (C#dagi `PrintDocument`
+        // yo'liga mos) — PDF/PDFium bosqichi endi chetlab o'tiladi.
+        await printReceiptViaGdi(
+          printerName: printer.name,
+          receipt: _sampleReceipt(),
         );
-        if (!success) {
-          throw Exception('Chop etib bo\'lmadi: ${printer.name}');
-        }
         await sendWindowsCutCommand(printer.name);
       } else {
         final bytes = await buildReceiptBytes(_sampleReceipt());
