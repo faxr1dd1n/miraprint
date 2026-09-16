@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:barcode/barcode.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
 
 import '../../model/receipt/header_item.dart';
 import '../../model/receipt/receipt_data.dart';
@@ -24,8 +25,11 @@ import 'social_icon_assets.dart';
 const _pxToPt = 0.75;
 double pt(double px) => px * _pxToPt;
 
-const _baseFontSize = 12.0 * _pxToPt;
-const _totalBigFontSize = 16.0 * _pxToPt;
+const _baseFontSize = 12.0 * _pxToPt; // mahsulot nomi, oddiy totals
+// Header sarlavha/qiymat va ijtimoiy tarmoq matni — saytdagidan farqli
+// o'laroq, foydalanuvchi tasdiqlagan holda 12px emas, 14px (2026-09-16).
+const _labelFontSize = 14.0 * _pxToPt;
+const _totalBigFontSize = 16.0 * _pxToPt; // Итого
 const _statusFontSize = 16.0 * _pxToPt;
 const _footerFontSize = 12.0 * _pxToPt;
 
@@ -63,8 +67,9 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
   if (receipt.logo.isNotEmpty) {
     final logoBytes = await _downloadBytes(receipt.logo);
     if (logoBytes != null) {
+      final printBytes = _ditherToBlackWhite(logoBytes) ?? logoBytes;
       blocks
-        ..add({'type': 'image', 'bytes': logoBytes, 'height': pt(60)})
+        ..add({'type': 'image', 'bytes': printBytes, 'height': pt(60)})
         ..add(_spacer(halveInCompact(8)));
     }
   }
@@ -117,14 +122,14 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
         'right': header.val,
         'leftBold': true,
         'rightBold': false,
-        'fontSize': _baseFontSize,
+        'fontSize': _labelFontSize,
       });
     } else {
       blocks.add({
         'type': 'headerRich',
         'title': header.title,
         'val': header.val,
-        'fontSize': _baseFontSize,
+        'fontSize': _labelFontSize,
       });
     }
     blocks.add(_spacer(zeroInCompact(4)));
@@ -185,16 +190,16 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
       try {
         iconBytes = await _rasterizeSvgIcon(
           socialIconAssetPath(social.icon),
-          pt(18),
+          pt(16),
         );
       } catch (_) {
         iconBytes = Uint8List(0);
       }
       items.add({
         'iconBytes': iconBytes,
-        'iconSize': pt(18),
+        'iconSize': pt(16),
         'title': social.title,
-        'fontSize': _baseFontSize,
+        'fontSize': _labelFontSize,
       });
     }
     blocks.add({
@@ -275,9 +280,12 @@ Map<String, Object?> _spacer(double height) => {
 Map<String, Object?> _divider(double verticalMargin) => {
   'type': 'divider',
   'margin': verticalMargin,
-  // CSS asosidagi 1px (pt(1)=0.75pt) hamon qalin chiqqani tasdiqlangan edi —
-  // yarmiga tushirilgan (`receipt_pdf_builder.dart`dagi asl qaror).
-  'thickness': 0.375,
+  // Eski PDF/PDFium yo'lida CSS asosidagi 1px (pt(1)=0.75pt) haddan
+  // tashqari qalin chiqqani uchun yarmiga tushirilgan edi (0.375) — lekin
+  // native GDI+ yo'lida (2026-09-16) aksincha, chiziqlar juda ingichka/xira
+  // chiqdi (GDI+ pen sub-piksel kenglikda thermal printerda zaif chiqadi),
+  // shuning uchun CSS'dagi asl 1px qiymatiga qaytarildi.
+  'thickness': pt(0.7),
 };
 
 /// Eski C# ilovadagi `DownloadLogoAsync` bilan bir xil: har qanday xatoda
@@ -294,12 +302,49 @@ Future<Uint8List?> _downloadBytes(String url) async {
   }
 }
 
+/// Rasm/logotipni qattiq qora/oq (Floyd-Steinberg) dithering bilan
+/// qayta ishlaydi — sabab: anti-aliased/rangli piksellarni GDI+ o'zi
+/// (`InterpolationModeHighQualityBicubic`) yoki printer drayveri qayta
+/// "silliqlab" dithering qilsa, natija xira/kulrang chiqadi (aynan matn
+/// xiraligining sababi bo'lgan muammo bilan bir xil ildiz — endi native
+/// tomon bu rasmni `NearestNeighbor` bilan, silliqlashtirmasdan chizadi).
+/// Xato bo'lsa (buzuq rasm) `null` qaytaradi — chaqiruvchi asl baytlarga
+/// tushadi.
+Uint8List? _ditherToBlackWhite(Uint8List sourceBytes) {
+  final decoded = img.decodeImage(sourceBytes);
+  if (decoded == null) return null;
+
+  // ~203dpi termal printerdagi taxminiy o'lchamga yaqin, ortiqcha
+  // shovqinsiz dithering uchun etarli zichlik.
+  const targetHeight = 180;
+  final resized = decoded.height > targetHeight
+      ? img.copyResize(
+          decoded,
+          height: targetHeight,
+          interpolation: img.Interpolation.average,
+        )
+      : decoded;
+
+  final dithered = img.ditherImage(
+    resized,
+    quantizer: img.BinaryQuantizer(),
+    kernel: img.DitherKernel.floydSteinberg,
+  );
+
+  return Uint8List.fromList(img.encodePng(dithered));
+}
+
 /// Ijtimoiy tarmoq ikonkasi SVG'sini kichik PNG rastriga aylantiradi (GDI+
 /// SVG'ni to'g'ridan-to'g'ri chiza olmaydi) — `receipt_canvas_renderer.dart`
 /// dagi bilan bir xil `vg.loadPicture` texnikasi.
 Future<Uint8List> _rasterizeSvgIcon(String assetPath, double sizePt) async {
   final pictureInfo = await vg.loadPicture(SvgAssetLoader(assetPath), null);
-  const scale = 3.0; // Chop etish sifati uchun ekrandagidan yuqoriroq rastr.
+  // Ikonka kichik bo'lgani uchun (odatda ~35px), yumshoq (anti-aliased)
+  // qirralar termal printerda dithering orqali "erib" ketib, xira
+  // ko'rinardi — shuning uchun yuqori zichlikda rastrga aylantirilib,
+  // keyin pastda alpha kanali qattiq threshold qilinadi (aniq qora/shaffof,
+  // yarim-shaffof piksel yo'q).
+  const scale = 4.0;
   final pixelSize = (sizePt * scale).round();
 
   final recorder = ui.PictureRecorder();
@@ -311,7 +356,29 @@ Future<Uint8List> _rasterizeSvgIcon(String assetPath, double sizePt) async {
   canvas.drawPicture(pictureInfo.picture);
   final picture = recorder.endRecording();
 
-  final image = await picture.toImage(pixelSize, pixelSize);
-  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-  return byteData!.buffer.asUint8List();
+  final uiImage = await picture.toImage(pixelSize, pixelSize);
+  final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.rawRgba);
+  final rgba = byteData!.buffer.asUint8List();
+
+  final image = img.Image.fromBytes(
+    width: uiImage.width,
+    height: uiImage.height,
+    bytes: rgba.buffer,
+    numChannels: 4,
+    order: img.ChannelOrder.rgba,
+  );
+
+  for (final pixel in image) {
+    if (pixel.a >= 128) {
+      pixel
+        ..r = 0
+        ..g = 0
+        ..b = 0
+        ..a = 255;
+    } else {
+      pixel.a = 0;
+    }
+  }
+
+  return Uint8List.fromList(img.encodePng(image));
 }

@@ -386,15 +386,17 @@ void DrawBlock(Gdiplus::Graphics& g, Gdiplus::SolidBrush& blackBrush,
     float width = naturalH > 0 ? height * (naturalW / naturalH) : height;
     float x = (contentWidth - width) / 2;
 
-    // C#dagi `DrawLogoFromUrl` bilan bir xil: faqat rasm chizishda
-    // yuqori sifatli interpolyatsiya yoqiladi, matn/chiziqlarga tegmaydi.
+    // MUHIM: bu bitmap (`receipt_gdi_blocks.dart`da) allaqachon Dart
+    // tomonida qattiq qora/oq (Floyd-Steinberg) dithering qilingan —
+    // `HighQualityBicubic` kabi silliqlashtiruvchi interpolyatsiya bu
+    // aniq naqshni yana kulrang piksellarga "erib" ketkazadi (bu aynan
+    // matn xiraligiga olib kelgan xato bilan bir xil ildiz). Shuning
+    // uchun bu yerda ataylab `NearestNeighbor` ishlatiladi — dithering
+    // natijasi o'zgarishsiz saqlanadi.
     auto oldInterp = g.GetInterpolationMode();
-    auto oldSmoothing = g.GetSmoothingMode();
-    g.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
-    g.SetSmoothingMode(Gdiplus::SmoothingModeHighQuality);
+    g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
     g.DrawImage(bitmap, Gdiplus::RectF(x, cursorY, width, height));
     g.SetInterpolationMode(oldInterp);
-    g.SetSmoothingMode(oldSmoothing);
 
     cursorY += height;
     return;
@@ -456,8 +458,11 @@ void DrawBlock(Gdiplus::Graphics& g, Gdiplus::SolidBrush& blackBrush,
       if (iconBytes && !iconBytes->empty() && iconSize > 0) {
         auto decoded = DecodeImage(*iconBytes);
         if (decoded) {
+          // Ikonka ham Dart tomonida qattiq qora/shaffof qilib
+          // tayyorlangan (`_rasterizeSvgIcon`) — silliqlashtirish uni
+          // qayta xiralashtiradi, shuning uchun `NearestNeighbor`.
           auto oldInterp = g.GetInterpolationMode();
-          g.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
+          g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
           g.DrawImage(decoded->bitmap.get(),
                       Gdiplus::RectF(cursorX, rowY + (itemHeight - iconSize) / 2,
                                     iconSize, iconSize));
