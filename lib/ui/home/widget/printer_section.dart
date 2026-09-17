@@ -64,7 +64,10 @@ class _PrinterSectionState extends State<PrinterSection> {
       setState(
         () => _testPrintResult = (
           success: true,
-          message: translate('printer.sent_success', args: {'name': printer.name}),
+          message: translate(
+            'printer.sent_success',
+            args: {'name': printer.name},
+          ),
         ),
       );
     } catch (e) {
@@ -99,7 +102,10 @@ class _PrinterSectionState extends State<PrinterSection> {
       setState(
         () => _testPrintResult = (
           success: true,
-          message: translate('printer.sent_success', args: {'name': printer.name}),
+          message: translate(
+            'printer.sent_success',
+            args: {'name': printer.name},
+          ),
         ),
       );
     } catch (e) {
@@ -150,8 +156,10 @@ class _PrinterSectionState extends State<PrinterSection> {
   ReceiptData _sampleReceipt() {
     return const ReceiptData(
       logo: 'https://mirasoft.io/assets/i/logo.jpg',
-      currentNumber: '1',
-      headers: [HeaderItem(title: 'Компания', val: 'Miraprint')],
+      headers: [
+        HeaderItem(key: 'order_number', title: 'Номер заказа', val: '1'),
+        HeaderItem(title: 'Компания', val: 'Miraprint'),
+      ],
       items: [
         ReceiptItem(
           name: 'Sinov mahsuloti',

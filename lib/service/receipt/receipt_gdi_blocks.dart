@@ -52,12 +52,15 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
 
   HeaderItem? statusHeader;
   HeaderItem? dateHeader;
+  HeaderItem? orderNumberHeader;
   for (final header in receipt.headers) {
     if (header.key == 'status') statusHeader = header;
     if (header.key == 'receipt_date') dateHeader = header;
+    if (header.key == 'order_number') orderNumberHeader = header;
   }
   final remainingHeaders = receipt.headers.where((header) {
     if (header.key == 'status') return false;
+    if (header.key == 'order_number') return false;
     if (isCentered && header.key == 'receipt_date') return false;
     return true;
   }).toList();
@@ -116,12 +119,12 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
       ..add(_spacer(halveInCompact(12)));
   }
 
-  if (receipt.currentNumber.isNotEmpty) {
+  if (orderNumberHeader != null && orderNumberHeader.val.isNotEmpty) {
     blocks
       ..add(_spacer(halveInCompact(10)))
       ..add(
         _text(
-          receipt.currentNumber,
+          orderNumberHeader.val,
           fontSize: pt(32),
           bold: true,
           align: 'center',

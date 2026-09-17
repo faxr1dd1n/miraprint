@@ -6,7 +6,6 @@ import 'total_item.dart';
 class ReceiptData {
   const ReceiptData({
     required this.logo,
-    required this.currentNumber,
     required this.headers,
     required this.items,
     required this.totals,
@@ -15,7 +14,6 @@ class ReceiptData {
   });
 
   final String logo;
-  final String currentNumber;
   final List<HeaderItem> headers;
   final List<ReceiptItem> items;
   final List<TotalItem> totals;
@@ -25,7 +23,6 @@ class ReceiptData {
   factory ReceiptData.fromJson(Map<String, dynamic> json) {
     return ReceiptData(
       logo: json['logo'] as String? ?? '',
-      currentNumber: json['current_number'] as String? ?? '',
       headers: (json['headers'] as List<dynamic>? ?? [])
           .map((e) => HeaderItem.fromJson(e as Map<String, dynamic>))
           .toList(),

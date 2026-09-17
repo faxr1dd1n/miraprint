@@ -129,11 +129,10 @@ double _renderContent(
   // qatorida qaytarilmaydi (pastdagi asosiy tsiklda `key == 'status'`
   // o'tkazib yuboriladi).
   HeaderItem? statusHeader;
+  HeaderItem? orderNumberHeader;
   for (final header in receipt.headers) {
-    if (header.key == 'status') {
-      statusHeader = header;
-      break;
-    }
+    if (header.key == 'status') statusHeader = header;
+    if (header.key == 'order_number') orderNumberHeader = header;
   }
 
   if (statusHeader != null && statusHeader.val.isNotEmpty) {
@@ -176,10 +175,10 @@ double _renderContent(
     y += boxHeight + 12 * spacing;
   }
 
-  if (receipt.currentNumber.isNotEmpty) {
+  if (orderNumberHeader != null && orderNumberHeader.val.isNotEmpty) {
     final painter = TextPainter(
       text: TextSpan(
-        text: receipt.currentNumber,
+        text: orderNumberHeader.val,
         style: const TextStyle(
           color: Color(0xFF000000),
           fontSize: 64,
@@ -197,6 +196,7 @@ double _renderContent(
 
   for (final header in receipt.headers) {
     if (header.key == 'status') continue;
+    if (header.key == 'order_number') continue;
     if (isCenteredDate && header.key == 'receipt_date') continue;
 
     final displayVal = header.key == 'receipt_date'
@@ -465,4 +465,3 @@ Future<img.Image?> renderFooterImage(ReceiptSettings? settings) async {
     );
   });
 }
-

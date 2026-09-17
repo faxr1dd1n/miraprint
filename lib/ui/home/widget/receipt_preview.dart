@@ -55,12 +55,15 @@ class ReceiptPreview extends StatelessWidget {
     // `layout.date_format` sozlamalardagi FORMAT nomi, ikkisi boshqa narsa.
     HeaderItem? statusHeader;
     HeaderItem? dateHeader;
+    HeaderItem? orderNumberHeader;
     for (final header in receipt.headers) {
       if (header.key == 'status') statusHeader = header;
       if (header.key == 'receipt_date') dateHeader = header;
+      if (header.key == 'order_number') orderNumberHeader = header;
     }
     final remainingHeaders = receipt.headers.where((header) {
       if (header.key == 'status') return false;
+      if (header.key == 'order_number') return false;
       if (isCenteredDate && header.key == 'receipt_date') return false;
       return true;
     }).toList();
@@ -119,7 +122,7 @@ class ReceiptPreview extends StatelessWidget {
             SizedBox(height: _halveInCompact(12)),
           ],
 
-          if (receipt.currentNumber.isNotEmpty) ...[
+          if (orderNumberHeader != null && orderNumberHeader.val.isNotEmpty) ...[
             Padding(
               padding: EdgeInsets.only(
                 top: _halveInCompact(10),
@@ -127,7 +130,7 @@ class ReceiptPreview extends StatelessWidget {
               ),
               child: Center(
                 child: Text(
-                  receipt.currentNumber,
+                  orderNumberHeader.val,
                   style: _mono.copyWith(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -304,7 +307,6 @@ class ReceiptPreview extends StatelessWidget {
       ],
     );
   }
-
 }
 
 class _BarcodeView extends StatelessWidget {
