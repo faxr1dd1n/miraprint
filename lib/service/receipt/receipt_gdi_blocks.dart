@@ -233,7 +233,7 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
 
   if (receipt.barcode.isNotEmpty) {
     blocks
-      ..add(_spacer(pt(10)))
+      ..add(_spacer(halveInCompact(10)))
       ..add({
         'type': 'barcodeBars',
         // Receipt.vue: `JsBarcode(..., { displayValue: false })` — barcode
@@ -254,7 +254,7 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
         'totalWidth': pt(120),
         'totalHeight': pt(80),
       })
-      ..add(_spacer(pt(8)));
+      ..add(_spacer(halveInCompact(8)));
   }
 
   // Receipt.vue `.thanks`: markazlashgan, letter-spacing:1px.
@@ -270,10 +270,12 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
           fontSize: _footerFontSize,
           align: 'center',
           letterSpacing: pt(1),
-          // Header itemlaridagi bilan bir xil naqsh (`zeroInCompact(4)`) —
-          // compact rejimda footer matnining ichki qatorlari orasidagi
-          // qo'shimcha bo'shliq ham nolga tushadi.
-          lineGap: zeroInCompact(4),
+          // `lineGap=0` yetarli emas edi — native qator balandligi
+          // shriftning o'z (`font.GetHeight()`) balandligidan hisoblanadi,
+          // bu compact bilan kamaymaydi. Shu sabab compact holatda manfiy
+          // qiymat berib, shrift balandligidan ayirib qatorlarni yanada
+          // yaqinlashtiramiz.
+          lineGap: isCompact ? pt(-3) : pt(4),
         ),
       );
   }
