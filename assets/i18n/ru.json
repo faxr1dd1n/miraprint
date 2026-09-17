@@ -23,6 +23,12 @@
     "title": "Принтер",
     "not_found": "Принтер не найден",
     "test_print": "Тестовая печать",
+    "custom_test_print": "Свой тест-печать",
+    "custom_dialog_title": "Введите свой JSON",
+    "custom_dialog_hint": "Вставьте сюда JSON тела чека...",
+    "custom_send": "Печать",
+    "custom_cancel": "Отмена",
+    "custom_invalid_json": "Неверный JSON: {error}",
     "sent_success": "Отправлено на принтер {name}"
   },
   "last_receipt": {

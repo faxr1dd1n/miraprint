@@ -23,6 +23,12 @@
     "title": "Printer",
     "not_found": "Printer topilmadi",
     "test_print": "Test Print",
+    "custom_test_print": "Custom Test Print",
+    "custom_dialog_title": "O'zingiz JSON kiriting",
+    "custom_dialog_hint": "Chek JSON tanasini shu yerga joylang...",
+    "custom_send": "Chop etish",
+    "custom_cancel": "Bekor qilish",
+    "custom_invalid_json": "JSON noto'g'ri: {error}",
     "sent_success": "{name} printerga yuborildi"
   },
   "last_receipt": {

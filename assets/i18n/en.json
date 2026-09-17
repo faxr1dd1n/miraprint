@@ -23,6 +23,12 @@
     "title": "Printer",
     "not_found": "No printer found",
     "test_print": "Test Print",
+    "custom_test_print": "Custom Test Print",
+    "custom_dialog_title": "Enter custom JSON",
+    "custom_dialog_hint": "Paste the receipt JSON body here...",
+    "custom_send": "Print",
+    "custom_cancel": "Cancel",
+    "custom_invalid_json": "Invalid JSON: {error}",
     "sent_success": "Sent to printer {name}"
   },
   "last_receipt": {

@@ -1,17 +1,16 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:miraprint/model/printer/print_request.dart';
 import 'package:miraprint/model/receipt/header_item.dart';
 import 'package:miraprint/model/receipt/receipt_data.dart';
 import 'package:miraprint/model/receipt/receipt_item.dart';
 import 'package:miraprint/model/receipt/social_link.dart';
 import 'package:miraprint/model/receipt/total_item.dart';
-import 'package:miraprint/service/printer/gdi_receipt_printer.dart';
 import 'package:miraprint/service/printer/mac_printer_lister.dart';
-import 'package:miraprint/service/printer/printer_connection.dart';
-import 'package:miraprint/service/printer/windows_cut_sender.dart';
-import 'package:miraprint/service/receipt/receipt_builder.dart';
+import 'package:miraprint/service/printer/receipt_dispatcher.dart';
 import 'package:miraprint/ui/home/widget/result_banner.dart';
 import 'package:miraprint/ui/home/widget/section_card.dart';
 import 'package:printing/printing.dart';
@@ -58,20 +57,10 @@ class _PrinterSectionState extends State<PrinterSection> {
     });
 
     try {
-      if (Platform.isWindows) {
-        // Bosqich 12 (2026-09-15): Windows'da production OS drayveri
-        // orqali chop etadi — Test Print ham aynan shu yo'lni sinaydi.
-        // GDI+ orqali to'g'ridan-to'g'ri chizadi (C#dagi `PrintDocument`
-        // yo'liga mos) — PDF/PDFium bosqichi endi chetlab o'tiladi.
-        await printReceiptViaGdi(
-          printerName: printer.name,
-          receipt: _sampleReceipt(),
-        );
-        await sendWindowsCutCommand(printer.name);
-      } else {
-        final bytes = await buildReceiptBytes(_sampleReceipt());
-        await PrinterConnection.forPlatform(printer.name).sendRaw(bytes);
-      }
+      await sendReceiptToPrinter(
+        printerName: printer.name,
+        receipt: _sampleReceipt(),
+      );
       setState(
         () => _testPrintResult = (
           success: true,
@@ -85,6 +74,77 @@ class _PrinterSectionState extends State<PrinterSection> {
     } finally {
       setState(() => _isTestPrinting = false);
     }
+  }
+
+  Future<void> _customTestPrint(String rawJson) async {
+    final printer = _selectedPrinter;
+    if (printer == null) return;
+
+    setState(() {
+      _isTestPrinting = true;
+      _testPrintResult = null;
+    });
+
+    try {
+      final json = jsonDecode(rawJson) as Map<String, dynamic>;
+      final printRequest = PrintRequest.fromJson(json);
+      // Foydalanuvchi joylagan JSON ichidagi "printer" maydoni boshqa
+      // (masalan production) qurilma nomi bo'lishi mumkin — chop etish
+      // doim dropdown'da tanlangan haqiqiy printerga yuboriladi.
+      await sendReceiptToPrinter(
+        printerName: printer.name,
+        receipt: printRequest.check,
+        settings: printRequest.receiptSettings,
+      );
+      setState(
+        () => _testPrintResult = (
+          success: true,
+          message: translate('printer.sent_success', args: {'name': printer.name}),
+        ),
+      );
+    } catch (e) {
+      setState(
+        () => _testPrintResult = (success: false, message: e.toString()),
+      );
+    } finally {
+      setState(() => _isTestPrinting = false);
+    }
+  }
+
+  Future<void> _openCustomTestPrintDialog() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(translate('printer.custom_dialog_title')),
+        content: SizedBox(
+          width: 560,
+          child: TextField(
+            controller: controller,
+            maxLines: 16,
+            minLines: 8,
+            style: const TextStyle(fontSize: 14, fontFamily: 'monospace'),
+            decoration: InputDecoration(
+              hintText: translate('printer.custom_dialog_hint'),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(translate('printer.custom_cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: Text(translate('printer.custom_send')),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || result.trim().isEmpty) return;
+    await _customTestPrint(result);
   }
 
   ReceiptData _sampleReceipt() {
@@ -186,6 +246,17 @@ class _PrinterSectionState extends State<PrinterSection> {
                 _isTestPrinting
                     ? translate('common.sending')
                     : translate('printer.test_print'),
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _selectedPrinter == null || _isTestPrinting
+                  ? null
+                  : _openCustomTestPrintDialog,
+              icon: const Icon(Icons.data_object),
+              label: Text(
+                translate('printer.custom_test_print'),
                 style: const TextStyle(fontSize: 18),
               ),
             ),
