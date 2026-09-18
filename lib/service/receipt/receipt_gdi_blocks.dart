@@ -237,8 +237,13 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
 
   if (receipt.barcode.isNotEmpty) {
     const barcodeWidth = 120.0;
+    // `halveInCompact` ishlatilmadi — u bitta sonni ikkala rejim uchun ham
+    // (normal = son, compact = yarmisi) ishlatadi, shu sabab avvalgi
+    // urinishda normalni ham beixtiyor toraytirib qo'ygan edi. Endi ikkalasi
+    // mustaqil: normal o'zgarishsiz (10), compact ancha kichik, lekin nolga
+    // yaqin emas (4).
     blocks
-      ..add(_spacer(halveInCompact(4)))
+      ..add(_spacer(isCompact ? pt(4) : pt(10)))
       ..add({
         'type': 'barcodeBars',
         // Receipt.vue: `JsBarcode(..., { displayValue: false })` — barcode

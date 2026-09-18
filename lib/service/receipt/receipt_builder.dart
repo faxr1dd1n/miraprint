@@ -53,7 +53,7 @@ Future<List<int>> buildReceiptBytes(
     // butunlay olib tashlanadi.
     if (!isCompact) bytes += generator.emptyLines(1);
     bytes += generator.barcode(
-      Barcode.code128(_code128Data(receipt.barcode).split('')),
+      Barcode.code128(receipt.barcode.split('')),
       textPos: BarcodeText.none,
     );
   }
@@ -67,21 +67,4 @@ Future<List<int>> buildReceiptBytes(
   bytes += generator.cut();
 
   return bytes;
-}
-
-final _digitsOnly = RegExp(r'^[0-9]+$');
-
-// Printerning o'zi (ESC/POS native Code128 buyrug'i) hech qanday prefiks
-// bo'lmasa har doim B subsetini ishlatadi (1 belgi = 1 raqam) — Windows
-// tomonidagi `barcode` kutubxonasi esa raqamli qiymatlar uchun avtomatik
-// ravishda C subsetini (1 belgi = 2 raqam, kamroq chiziq) tanlaydi. Ikkala
-// platformada bir xil (qisqaroq, kengroq chiziqli) natija chiqishi uchun
-// C subsetini `{C` prefiksi bilan qo'lda majburlaymiz — lekin faqat C
-// talab qiladigan shartda (faqat raqamlar, juft uzunlik), aks holda
-// (masalan harf bor yoki toq uzunlik) xavfsiz B'ga qoldiramiz.
-String _code128Data(String barcode) {
-  final isEvenDigitsOnly = barcode.isNotEmpty &&
-      barcode.length.isEven &&
-      _digitsOnly.hasMatch(barcode);
-  return isEvenDigitsOnly ? '{C$barcode' : barcode;
 }

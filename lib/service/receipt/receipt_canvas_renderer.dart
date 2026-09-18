@@ -136,7 +136,10 @@ double _renderContent(
   }
 
   if (statusHeader != null && statusHeader.val.isNotEmpty) {
-    const statusFontSize = 24.0;
+    // Windows'dagi `_statusFontSize` (14px CSS ×0.75=10.5pt) bilan bir xil
+    // naqsh (CSS px ×2) — ilgari 24 (=12px×2) edi, bu Windows'dan (14px×2=28)
+    // kichikroq chiqishiga sabab bo'lgan.
+    const statusFontSize = 28.0;
     const statusPadding = 12.0;
     const statusBorderWidth = 3.0;
     // Windows'dagi bilan bir xil (`receipt_gdi_blocks.dart` `statusBox`,
