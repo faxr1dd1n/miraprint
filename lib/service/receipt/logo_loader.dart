@@ -17,10 +17,16 @@ Future<img.Image?> loadLogoImage(String url) async {
   }
 }
 
+// Windows/C# tomonidagi qiymatlar bilan bir xil (`receipt_gdi_blocks.dart`
+// `logoMaxHeight`/`logoMaxWidth`, C#: 1.4in/2.6in), 203dpi'ga o'girilgan
+// (`_printWidth = 576px` ham shu dpi'dagi 72mm printable kenglikka mos) —
+// ilgari mustaqil ravishda kichikroq (200px) tanlangan edi, shu sabab
+// balandlik bo'yicha cheklangan logotiplar Mac'da Windows'dan kichikroq
+// chiqardi.
 img.Image _fitToPrintWidth(
   img.Image source, {
-  int maxWidth = 520,
-  int maxHeight = 200,
+  int maxWidth = 528,
+  int maxHeight = 284,
 }) {
   var width = source.width;
   var height = source.height;

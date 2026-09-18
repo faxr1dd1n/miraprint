@@ -236,6 +236,14 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
   }
 
   if (receipt.barcode.isNotEmpty) {
+    // Mac'da printerning o'zi (ESC/POS native barcode buyrug'i) kenglikni
+    // tanlaydi — bu yerda esa o'zimiz belgilashimiz kerak. Ilgari 120pt
+    // (~42mm) edi: uzunroq qiymatlar uchun har bir chiziq juda ingichka
+    // bo'lib, chop etilganda qo'shni chiziqlar bilan qo'shilib ketardi
+    // (foydalanuvchi sinovida: Mac'da 28 ta chiziq, Windows'da shu sabab 19
+    // ta bo'lib chiqqan). 180pt (~63.5mm) mavjud kontent kengligiga
+    // (~72mm) yaqinroq, chiziqlarga ko'proq joy beradi.
+    const barcodeWidth = 180.0;
     blocks
       ..add(_spacer(halveInCompact(10)))
       ..add({
@@ -243,7 +251,7 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
         // Receipt.vue: `JsBarcode(..., { displayValue: false })` — barcode
         // ostida raqamli matn KO'RSATILMAYDI.
         'bars': Barcode.code128()
-            .make(receipt.barcode, width: pt(120), height: pt(80))
+            .make(receipt.barcode, width: pt(barcodeWidth), height: pt(80))
             .whereType<BarcodeBar>()
             .where((bar) => bar.black)
             .map(
@@ -255,7 +263,7 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
               },
             )
             .toList(),
-        'totalWidth': pt(120),
+        'totalWidth': pt(barcodeWidth),
         'totalHeight': pt(80),
       })
       ..add(_spacer(halveInCompact(8)));
