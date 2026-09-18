@@ -86,7 +86,15 @@ Gdiplus::StringFormat& TightFormat() {
   static Gdiplus::StringFormat* format = [] {
     auto* f = new Gdiplus::StringFormat(Gdiplus::StringFormat::GenericTypographic());
     f->SetFormatFlags(Gdiplus::StringFormatFlagsNoWrap |
-                      Gdiplus::StringFormatFlagsNoClip);
+                      Gdiplus::StringFormatFlagsNoClip |
+                      // `letterSpacing > 0` bo'lganda (footer matni) har bir
+                      // belgi, jumladan bo'sh joy (space) ham, YAKKA holda
+                      // o'lchanadi (`MeasureWidth`). Bu bayroqsiz GDI+ yakka
+                      // space belgisining kengligini "trailing" deb hisoblab
+                      // 0 qaytaradi — natijada so'zlar orasidagi bo'shliq
+                      // harflar orasidagi bo'shliq (`letterSpacing`ning o'zi)
+                      // bilan bir xil chiqib, matnni o'qib bo'lmay qolgan.
+                      Gdiplus::StringFormatFlagsMeasureTrailingSpaces);
     f->SetTrimming(Gdiplus::StringTrimmingNone);
     return f;
   }();

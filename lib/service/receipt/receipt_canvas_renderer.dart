@@ -139,6 +139,14 @@ double _renderContent(
     const statusFontSize = 24.0;
     const statusPadding = 12.0;
     const statusBorderWidth = 3.0;
+    // Windows'dagi bilan bir xil (`receipt_gdi_blocks.dart` `statusBox`,
+    // `widthFraction: 0.8`, foydalanuvchi qarori 2026-09-16) — ramka matn
+    // uzunligiga qarab tiqilib qolmasin, doim kontent kengligining 80%ini
+    // egallasin.
+    const statusWidthFraction = 0.8;
+    final boxWidth = _printWidth * statusWidthFraction;
+    final innerWidth = boxWidth - (statusPadding + statusBorderWidth) * 2;
+
     final painter = TextPainter(
       text: TextSpan(
         text: statusHeader.val.toUpperCase(),
@@ -150,9 +158,8 @@ double _renderContent(
       ),
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
-    )..layout(maxWidth: _printWidth - (statusPadding + statusBorderWidth) * 2);
+    )..layout(maxWidth: innerWidth);
 
-    final boxWidth = painter.width + (statusPadding + statusBorderWidth) * 2;
     final boxHeight = painter.height + (statusPadding + statusBorderWidth) * 2;
     final boxLeft = (_printWidth - boxWidth) / 2;
 
@@ -167,7 +174,7 @@ double _renderContent(
       painter.paint(
         canvas,
         Offset(
-          boxLeft + statusPadding + statusBorderWidth,
+          boxLeft + (boxWidth - painter.width) / 2,
           y + statusPadding + statusBorderWidth,
         ),
       );
@@ -440,7 +447,11 @@ Future<img.Image?> renderFooterImage(ReceiptSettings? settings) async {
       text: footerNotice,
       style: TextStyle(
         color: const Color(0xFF000000),
-        fontSize: 20,
+        // Boshqa matnlar bilan bir xil naqsh (CSS 12px × 2, `receipt_gdi_blocks.dart`
+        // `_footerFontSize`dagi kabi 12px asosida) — ilgari 20 edi, bu
+        // naqshdan chetga chiqib, Windows'dagidan (9pt ≈ 12px) kichikroq
+        // chiqishiga sabab bo'lgan.
+        fontSize: 24,
         letterSpacing: 1,
         // Receipt.vue: `.receipt--spacing-compact .thanks { line-height: 16px }`
         // — ko'p qatorli (`\n`) footer matni compact holatda zichroq bo'lishi
