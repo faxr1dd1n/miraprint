@@ -30,7 +30,11 @@ const _baseFontSize = 12.0 * _pxToPt; // mahsulot nomi, oddiy totals
 // o'laroq, foydalanuvchi tasdiqlagan holda 12px emas, 14px (2026-09-16).
 const _labelFontSize = 12.0 * _pxToPt;
 const _totalBigFontSize = 16.0 * _pxToPt; // Итого
-const _statusFontSize = 16.0 * _pxToPt;
+// Haqiqiy bosib chiqarish kengligi (72.1mm) tuzatilgach (`gdi_receipt_printer.cpp`,
+// `HORZRES`/`LOGPIXELSX` orqali chegaralash), status ramkasi ilgarigidan
+// tor bo'lib qoldi (`widthFraction: 0.8` shu tor kenglikning 80%i) — 16px
+// matn endi bitta qatorga sig'maydi, shuning uchun 14px'ga tushirildi.
+const _statusFontSize = 14.0 * _pxToPt;
 const _footerFontSize = 12.0 * _pxToPt;
 
 // 80mm rulon qog'oz kengligi, punktda (72pt/dyum, 1dyum=25.4mm) — avvalgi

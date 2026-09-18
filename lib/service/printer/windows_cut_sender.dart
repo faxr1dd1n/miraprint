@@ -12,5 +12,15 @@ import 'windows_raw_printer_connection.dart';
 Future<void> sendWindowsCutCommand(String printerName) async {
   final profile = await CapabilityProfile.load();
   final generator = Generator(PaperSize.mm80, profile);
-  await WindowsRawPrinterConnection(printerName).sendRaw(generator.cut());
+  // `cut()` ichida qattiq yozilgan `emptyLines(5)` GDI job'dan qolgan qanday
+  // qator balandligi holatida bo'lsa o'shanda hisoblanadi (bu job hech qachon
+  // reset qilinmagan edi) — oldingi `reset()` uni default holatga qaytarib,
+  // ortiqcha bo'shliqni oldini oladi; keyingi `reset()` esa printerni
+  // KEYINGI chek uchun toza holatda qoldiradi.
+  final bytes = <int>[
+    ...generator.reset(),
+    ...generator.cut(),
+    ...generator.reset(),
+  ];
+  await WindowsRawPrinterConnection(printerName).sendRaw(bytes);
 }
