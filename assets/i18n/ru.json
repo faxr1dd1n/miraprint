@@ -40,6 +40,8 @@
   },
   "update": {
     "title": "Доступно обновление",
+    "check_button": "Проверить обновления",
+    "no_update_found": "Обновлений нет, установлена последняя версия",
     "new_version": "Новая версия: {version}",
     "update_button": "Обновить",
     "downloaded_title": "Загружено",

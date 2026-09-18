@@ -2,51 +2,28 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:miraprint/core/app_logger.dart';
-import 'package:miraprint/model/update/update_info.dart';
-import 'package:miraprint/service/update/update_checker.dart';
+import 'package:miraprint/service/update/update_controller.dart';
 import 'package:miraprint/service/update/update_downloader.dart';
 import 'package:miraprint/ui/home/widget/section_card.dart';
 
 class UpdateAvailableCard extends StatefulWidget {
-  const UpdateAvailableCard({super.key});
+  const UpdateAvailableCard({required this.controller, super.key});
+
+  final UpdateController controller;
 
   @override
   State<UpdateAvailableCard> createState() => _UpdateAvailableCardState();
 }
 
 class _UpdateAvailableCardState extends State<UpdateAvailableCard> {
-  UpdateInfo? _updateInfo;
   bool _isDownloading = false;
   int _receivedBytes = 0;
   int _totalBytes = 0;
   UpdateCancelToken? _cancelToken;
   String? _errorMessage;
 
-  @override
-  void initState() {
-    super.initState();
-    _checkForUpdate();
-  }
-
-  Future<void> _checkForUpdate() async {
-    try {
-      final info = await checkForUpdate();
-      appLogger.info(
-        info == null
-            ? 'Update tekshiruvi: yangilanish yo\'q (kAppVersion joriy/yangi)'
-            : 'Update tekshiruvi: ${info.version} mavjud (${info.downloadUrl})',
-      );
-      if (mounted) setState(() => _updateInfo = info);
-    } catch (e) {
-      // Server ishlamasa (masalan test bosqichida) ham UI'da xato
-      // ko'rsatilmaydi — faqat logga yoziladi, diagnostika uchun.
-      appLogger.warning('Update tekshiruvida xato: $e');
-    }
-  }
-
   Future<void> _downloadAndInstall() async {
-    final info = _updateInfo;
+    final info = widget.controller.info;
     if (info == null) return;
 
     final cancelToken = UpdateCancelToken();
@@ -112,86 +89,98 @@ class _UpdateAvailableCardState extends State<UpdateAvailableCard> {
   @override
   Widget build(BuildContext context) {
     LocalizationProvider.of(context);
-    final info = _updateInfo;
-    if (info == null) return const SizedBox.shrink();
 
-    final colorScheme = Theme.of(context).colorScheme;
-    final progress = _totalBytes > 0 ? _receivedBytes / _totalBytes : null;
+    return ListenableBuilder(
+      listenable: widget.controller,
+      builder: (context, _) {
+        final info = widget.controller.info;
+        if (info == null) return const SizedBox.shrink();
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: SectionCard(
-        title: translate('update.title'),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+        final colorScheme = Theme.of(context).colorScheme;
+        final progress = _totalBytes > 0 ? _receivedBytes / _totalBytes : null;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: SectionCard(
+            title: translate('update.title'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: Text(
-                    translate('update.new_version', args: {'version': info.version}),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        translate(
+                          'update.new_version',
+                          args: {'version': info.version},
+                        ),
+                      ),
+                    ),
+                    if (_isDownloading)
+                      TextButton(
+                        onPressed: _cancelDownload,
+                        child: Text(translate('common.cancel')),
+                      ),
+                    const SizedBox(width: 8),
+                    FilledButton.icon(
+                      onPressed: _isDownloading ? null : _downloadAndInstall,
+                      icon: _isDownloading
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                value: progress,
+                                color: colorScheme.onPrimary,
+                              ),
+                            )
+                          : const Icon(Icons.download),
+                      label: Text(
+                        _isDownloading
+                            ? translate('common.downloading')
+                            : translate('update.update_button'),
+                      ),
+                    ),
+                  ],
                 ),
-                if (_isDownloading)
-                  TextButton(
-                    onPressed: _cancelDownload,
-                    child: Text(translate('common.cancel')),
+                if (_isDownloading) ...[
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(value: progress),
                   ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: _isDownloading ? null : _downloadAndInstall,
-                  icon: _isDownloading
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            value: progress,
-                            color: colorScheme.onPrimary,
+                  const SizedBox(height: 4),
+                  Text(
+                    _totalBytes > 0
+                        ? translate(
+                            'update.progress_of',
+                            args: {
+                              'received': _formatBytes(_receivedBytes),
+                              'total': _formatBytes(_totalBytes),
+                            },
+                          )
+                        : translate(
+                            'update.progress_downloaded',
+                            args: {'received': _formatBytes(_receivedBytes)},
                           ),
-                        )
-                      : const Icon(Icons.download),
-                  label: Text(
-                    _isDownloading
-                        ? translate('common.downloading')
-                        : translate('update.update_button'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
+                ],
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _errorMessage!,
+                    style: TextStyle(color: colorScheme.error),
+                  ),
+                ],
               ],
             ),
-            if (_isDownloading) ...[
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(value: progress),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _totalBytes > 0
-                    ? translate(
-                        'update.progress_of',
-                        args: {
-                          'received': _formatBytes(_receivedBytes),
-                          'total': _formatBytes(_totalBytes),
-                        },
-                      )
-                    : translate(
-                        'update.progress_downloaded',
-                        args: {'received': _formatBytes(_receivedBytes)},
-                      ),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 12),
-              Text(_errorMessage!, style: TextStyle(color: colorScheme.error)),
-            ],
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

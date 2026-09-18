@@ -40,6 +40,8 @@
   },
   "update": {
     "title": "Yangilanish mavjud",
+    "check_button": "Yangilanishni tekshirish",
+    "no_update_found": "Yangilanish yo'q, joriy versiya eng so'nggisi",
     "new_version": "Yangi versiya: {version}",
     "update_button": "Yangilash",
     "downloaded_title": "Yuklab olindi",

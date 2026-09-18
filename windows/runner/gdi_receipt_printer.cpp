@@ -540,7 +540,23 @@ bool PrintReceiptBlocks(const std::wstring& printer_name,
 
     Gdiplus::SolidBrush blackBrush(Gdiplus::Color(255, 0, 0, 0));
     float cursorY = 0;
-    float contentWidth = static_cast<float>(content_width_pt);
+
+    // Dart 80mm deb hisoblagan kenglikka (`content_width_pt`) har doim ham
+    // ishonib bo'lmaydi — termal printer drayverining haqiqiy bosib
+    // chiqarish maydoni (qog'oz kengligi sozlamasiga qarab) undan tor
+    // bo'lishi mumkin (masalan drayverda "80mm" nomlangan qog'oz haqiqatda
+    // 72.1mm bosib chiqaradi), natijada o'ng chetdagi elementlar (narx,
+    // sarlavha qiymati) DC chegarasidan tashqarida qolib jimgina kesilib
+    // ketadi. Shu sabab DC'dan haqiqiy piksel kengligini (`HORZRES`) va
+    // uning DPI'sini (`LOGPIXELSX`) so'rab, punktga o'girib, ikkalasining
+    // kichigini olamiz.
+    int horzResPx = GetDeviceCaps(hDC, HORZRES);
+    int dpiX = GetDeviceCaps(hDC, LOGPIXELSX);
+    float printableWidthPt = (horzResPx > 0 && dpiX > 0)
+        ? horzResPx * 72.0f / dpiX
+        : static_cast<float>(content_width_pt);
+    float contentWidth = std::min(static_cast<float>(content_width_pt),
+                                  printableWidthPt);
 
     for (const auto& blockValue : blocks) {
       auto* block = AsMap(blockValue);

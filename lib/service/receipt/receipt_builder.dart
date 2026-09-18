@@ -11,6 +11,7 @@ Future<List<int>> buildReceiptBytes(
 }) async {
   final profile = await CapabilityProfile.load();
   final generator = Generator(PaperSize.mm80, profile);
+  final isCompact = settings?.spacing == 'compact';
   List<int> bytes = [];
 
   // Printer sovuq holatda (endigina yoqilgan yoki ilova birinchi marta
@@ -46,7 +47,11 @@ Future<List<int>> buildReceiptBytes(
   bytes += generator.imageRaster(contentImage);
 
   if (receipt.barcode.isNotEmpty) {
-    bytes += generator.emptyLines(1);
+    // GDI (Windows) yo'lida bu bo'shliq compact rejimda yarmiga tushadi
+    // (`receipt_gdi_blocks.dart`dagi `halveInCompact`) — ESC/POS'da faqat
+    // butun qator berish mumkin, shu sabab yarim o'rniga compact'da
+    // butunlay olib tashlanadi.
+    if (!isCompact) bytes += generator.emptyLines(1);
     bytes += generator.barcode(
       Barcode.code128(receipt.barcode.split('')),
       textPos: BarcodeText.none,
@@ -55,7 +60,7 @@ Future<List<int>> buildReceiptBytes(
 
   final footerImage = await renderFooterImage(settings);
   if (footerImage != null) {
-    bytes += generator.emptyLines(1);
+    if (!isCompact) bytes += generator.emptyLines(1);
     bytes += generator.imageRaster(footerImage);
   }
 

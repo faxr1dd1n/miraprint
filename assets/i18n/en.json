@@ -40,6 +40,8 @@
   },
   "update": {
     "title": "Update available",
+    "check_button": "Check for updates",
+    "no_update_found": "No update available, you're on the latest version",
     "new_version": "New version: {version}",
     "update_button": "Update",
     "downloaded_title": "Downloaded",
