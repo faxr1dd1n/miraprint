@@ -17,16 +17,10 @@ Future<img.Image?> loadLogoImage(String url) async {
   }
 }
 
-// Windows/C# tomonidagi qiymatlar bilan bir xil (`receipt_gdi_blocks.dart`
-// `logoMaxHeight`/`logoMaxWidth`, C#: 1.4in/2.6in), 203dpi'ga o'girilgan
-// (`_printWidth = 576px` ham shu dpi'dagi 72mm printable kenglikka mos) —
-// ilgari mustaqil ravishda kichikroq (200px) tanlangan edi, shu sabab
-// balandlik bo'yicha cheklangan logotiplar Mac'da Windows'dan kichikroq
-// chiqardi.
 img.Image _fitToPrintWidth(
   img.Image source, {
-  int maxWidth = 528,
-  int maxHeight = 284,
+  int maxWidth = 520,
+  int maxHeight = 200,
 }) {
   var width = source.width;
   var height = source.height;
@@ -39,6 +33,15 @@ img.Image _fitToPrintWidth(
     width = (width * maxHeight / height).round();
     height = maxHeight;
   }
+
+  // `esc_pos_utils_plus`ning `imageRaster()`i (`generator.dart:166-194`)
+  // kengligi 8ga bo'linmaydigan tasvirlarda ichki bug'ga ega (fixed-length
+  // ro'yxatga `insertAll` bilan qo'shishga urinadi, "Cannot add to a
+  // fixed-length list" xatosi) — shu sabab qaysi logotip/nisbat
+  // bo'lishidan qat'i nazar, final kenglik har doim eng yaqin 8ning
+  // karraliga tushiriladi.
+  width -= width % 8;
+  if (width <= 0) width = 8;
 
   return img.copyResize(source, width: width, height: height);
 }
