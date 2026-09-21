@@ -29,7 +29,8 @@
     "custom_send": "Chop etish",
     "custom_cancel": "Bekor qilish",
     "custom_invalid_json": "JSON noto'g'ri: {error}",
-    "sent_success": "{name} printerga yuborildi"
+    "sent_success": "{name} printerga yuborildi",
+    "offline": "ulanmagan"
   },
   "last_receipt": {
     "title": "So'nggi qabul qilingan chek (POST /print)",

@@ -29,7 +29,8 @@
     "custom_send": "Print",
     "custom_cancel": "Cancel",
     "custom_invalid_json": "Invalid JSON: {error}",
-    "sent_success": "Sent to printer {name}"
+    "sent_success": "Sent to printer {name}",
+    "offline": "disconnected"
   },
   "last_receipt": {
     "title": "Last received receipt (POST /print)",

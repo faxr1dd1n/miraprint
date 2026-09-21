@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:miraprint/core/app_logger.dart';
 
 import '../../core/app_constants.dart';
 import '../../core/app_version.dart';
@@ -15,9 +16,27 @@ import '../../model/update/update_info.dart';
 ///  "macos":   {"version": "1.0.3", "download_url": "...dmg"}}
 /// ```
 Future<UpdateInfo?> checkForUpdate() async {
-  final response = await http
-      .get(Uri.parse('$kUpdateServerUrl/version.json'))
-      .timeout(const Duration(seconds: 5));
+  final uri = Uri.parse('$kUpdateServerUrl/version.json');
+  final stopwatch = Stopwatch()..start();
+
+  final http.Response response;
+  try {
+    response = await http.get(uri).timeout(const Duration(seconds: 5));
+  } catch (e) {
+    stopwatch.stop();
+    appLogger.warning(
+      '[UPDATE] GET $uri -> ❌ ULANMADI • '
+      '${stopwatch.elapsedMilliseconds}ms\n'
+      '  xato: $e',
+    );
+    rethrow;
+  }
+
+  stopwatch.stop();
+  appLogger.info(
+    '[UPDATE] GET $uri -> ${response.statusCode} • '
+    '${stopwatch.elapsedMilliseconds}ms',
+  );
 
   if (response.statusCode != 200) return null;
 

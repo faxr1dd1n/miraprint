@@ -29,7 +29,8 @@
     "custom_send": "Печать",
     "custom_cancel": "Отмена",
     "custom_invalid_json": "Неверный JSON: {error}",
-    "sent_success": "Отправлено на принтер {name}"
+    "sent_success": "Отправлено на принтер {name}",
+    "offline": "не подключен"
   },
   "last_receipt": {
     "title": "Последний полученный чек (POST /print)",

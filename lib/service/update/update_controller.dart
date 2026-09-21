@@ -37,13 +37,14 @@ class UpdateController extends ChangeNotifier {
       final result = await checkForUpdate();
       appLogger.info(
         result == null
-            ? 'Update tekshiruvi: yangilanish yo\'q'
-            : 'Update tekshiruvi: ${result.version} mavjud (${result.downloadUrl})',
+            ? '[UPDATE] Yangilanish yo\'q'
+            : '[UPDATE] ${result.version} mavjud (${result.downloadUrl})',
       );
       _info = result;
       return result != null;
     } catch (e) {
-      appLogger.warning('Update tekshiruvida xato: $e');
+      // Tarmoq xatosi allaqachon checkForUpdate() ichida [UPDATE] tegi
+      // bilan batafsil loglangan — bu yerda qayta loglash shart emas.
       return _info != null;
     } finally {
       _isChecking = false;

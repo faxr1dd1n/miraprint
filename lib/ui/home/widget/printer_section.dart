@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:miraprint/core/app_logger.dart';
 import 'package:miraprint/model/printer/print_request.dart';
 import 'package:miraprint/model/receipt/header_item.dart';
 import 'package:miraprint/model/receipt/receipt_data.dart';
@@ -37,14 +38,38 @@ class _PrinterSectionState extends State<PrinterSection> {
 
   Future<void> _loadPrinters() async {
     setState(() => _isLoadingPrinters = true);
-    final printers = Platform.isMacOS
-        ? await listMacPrinters()
-        : await Printing.listPrinters();
-    setState(() {
-      _printers = printers;
-      _selectedPrinter = printers.isNotEmpty ? printers.first : null;
-      _isLoadingPrinters = false;
-    });
+    final stopwatch = Stopwatch()..start();
+    try {
+      final printers = Platform.isMacOS
+          ? await listMacPrinters()
+          : await Printing.listPrinters();
+      stopwatch.stop();
+
+      appLogger.info(
+        [
+          '[PRINTER] Ro\'yxat yuklandi -> ${printers.length} ta • '
+              '${stopwatch.elapsedMilliseconds}ms',
+          for (final printer in printers)
+            '  - ${printer.name}'
+            '${printer.isDefault ? ' (default)' : ''}'
+            '${printer.isAvailable ? '' : ' — ulanmagan'}',
+        ].join('\n'),
+      );
+
+      setState(() {
+        _printers = printers;
+        _selectedPrinter = printers.isNotEmpty ? printers.first : null;
+        _isLoadingPrinters = false;
+      });
+    } catch (e) {
+      stopwatch.stop();
+      appLogger.severe(
+        '[PRINTER] Ro\'yxatni yuklab bo\'lmadi -> ❌ ISTISNO • '
+        '${stopwatch.elapsedMilliseconds}ms\n'
+        '  xato: $e',
+      );
+      setState(() => _isLoadingPrinters = false);
+    }
   }
 
   Future<void> _testPrint() async {
@@ -225,9 +250,15 @@ class _PrinterSectionState extends State<PrinterSection> {
                   .map(
                     (printer) => DropdownMenuEntry(
                       value: printer,
-                      label: printer.name,
+                      label: printer.isAvailable
+                          ? printer.name
+                          : '${printer.name} '
+                                '(${translate('printer.offline')})',
                       style: MenuItemButton.styleFrom(
                         textStyle: const TextStyle(fontSize: 18),
+                        foregroundColor: printer.isAvailable
+                            ? null
+                            : colorScheme.onSurfaceVariant,
                       ),
                     ),
                   )

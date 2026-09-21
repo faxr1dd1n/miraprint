@@ -25,30 +25,43 @@ Middleware get corsMiddleware => (Handler innerHandler) {
   };
 };
 
-/// Har bir so'rovni (`GET /printers`, `POST /print`) va **javob tanasini**
-/// (biz sayt`ga aynan nima jo'natayotganimizni) `appLogger` orqali
-/// konsolga (va log faylga) yozadi. Javob tanasi stream sifatida faqat
-/// bir marta o'qiladi — shuning uchun uni o'qib olib, xuddi shu matn bilan
-/// yangi `Response` qaytaramiz (aks holda haqiqiy javob bo'sh ketardi).
+/// Har bir so'rovni (`GET /printers`, `POST /print`) — so'rov tanasi, javob
+/// tanasi, holat kodi va sarflangan vaqt bilan birga — bitta tartibli blok
+/// sifatida `appLogger` orqali konsolga (va log faylga) yozadi. So'rov/javob
+/// tanasi stream sifatida faqat bir marta o'qiladi — shuning uchun uni
+/// o'qib olib, xuddi shu matn bilan yangi `Request`/`Response` qaytaramiz
+/// (aks holda haqiqiy so'rov/javob bo'sh ketardi).
 Middleware get requestLoggingMiddleware => (Handler innerHandler) {
   return (Request request) async {
     final stopwatch = Stopwatch()..start();
+    final requestBody = await request.readAsString();
+    final forwardedRequest = request.change(body: requestBody);
+
     try {
-      final response = await innerHandler(request);
-      final body = await response.readAsString();
+      final response = await innerHandler(forwardedRequest);
+      final responseBody = await response.readAsString();
       stopwatch.stop();
-      final level = response.statusCode < 400 ? 'OK' : 'XATO';
+
+      final isOk = response.statusCode < 400;
+      final statusLabel = isOk
+          ? '${response.statusCode} OK'
+          : '⚠️ ${response.statusCode} XATO';
+
       appLogger.info(
-        '${request.method} ${request.requestedUri.path} -> '
-        '$level (${response.statusCode}), ${stopwatch.elapsedMilliseconds}ms\n'
-        '  Javob: $body',
+        [
+          '[HTTP] ${request.method} ${request.requestedUri.path} -> '
+              '$statusLabel • ${stopwatch.elapsedMilliseconds}ms',
+          if (requestBody.isNotEmpty) '  so\'rov: $requestBody',
+          '  javob: $responseBody',
+        ].join('\n'),
       );
-      return response.change(body: body);
+      return response.change(body: responseBody);
     } catch (e) {
       stopwatch.stop();
       appLogger.severe(
-        '${request.method} ${request.requestedUri.path} -> '
-        'ISTISNO: $e, ${stopwatch.elapsedMilliseconds}ms',
+        '[HTTP] ${request.method} ${request.requestedUri.path} -> '
+        '❌ ISTISNO • ${stopwatch.elapsedMilliseconds}ms\n'
+        '  xato: $e',
       );
       rethrow;
     }

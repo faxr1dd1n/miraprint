@@ -24,15 +24,35 @@ Future<void> setupLogging() async {
   }
 
   Logger.root.onRecord.listen((record) {
-    final line = '${record.time} ${record.level.name}: ${record.message}';
+    final lines = record.message.split('\n');
+    final consoleText = [
+      '${_levelMarker(record.level)} ${_formatTime(record.time)}  '
+          '${lines.first}',
+      ...lines.skip(1),
+    ].join('\n');
     // ignore: avoid_print
-    print(line);
+    print(consoleText);
+
+    final fileLine = '${record.time} ${record.level.name}: ${record.message}';
     try {
-      _logFile?.writeAsStringSync('$line\n', mode: FileMode.append);
+      _logFile?.writeAsStringSync('$fileLine\n', mode: FileMode.append);
     } catch (_) {
       // xuddi shu sabab — fayl yozuvi xatosi ilovani to'xtatmasin.
     }
   });
+}
+
+String _formatTime(DateTime time) {
+  String two(int n) => n.toString().padLeft(2, '0');
+  String three(int n) => n.toString().padLeft(3, '0');
+  return '${two(time.hour)}:${two(time.minute)}:${two(time.second)}.'
+      '${three(time.millisecond)}';
+}
+
+String _levelMarker(Level level) {
+  if (level >= Level.SEVERE) return '❌';
+  if (level >= Level.WARNING) return '⚠️';
+  return 'ℹ️';
 }
 
 Future<File> _prepareLogFile() async {
