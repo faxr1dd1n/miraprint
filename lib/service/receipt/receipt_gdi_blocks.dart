@@ -9,6 +9,7 @@ import 'package:image/image.dart' as img;
 import '../../model/receipt/header_item.dart';
 import '../../model/receipt/receipt_data.dart';
 import '../../model/receipt/receipt_date_format.dart';
+import '../../model/receipt/receipt_item_text.dart';
 import '../../model/receipt/receipt_settings.dart';
 import 'social_icon_assets.dart';
 
@@ -161,13 +162,19 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
 
   blocks.add(_divider(halveInCompact(6)));
 
-  for (final item in receipt.items) {
+  for (final (index, item) in receipt.items.indexed) {
     blocks
-      ..add(_text(item.name, fontSize: _baseFontSize, bold: true))
+      ..add(
+        _text(
+          receiptItemName(item, index, settings),
+          fontSize: _baseFontSize,
+          bold: true,
+        ),
+      )
       ..add(_spacer(zeroInCompact(6)))
       ..add({
         'type': 'row',
-        'left': '${item.qty}шт x ${item.price}',
+        'left': '${item.qtyText}шт x ${item.price}',
         'right': item.totalPrice,
         'leftBold': false,
         'rightBold': true,

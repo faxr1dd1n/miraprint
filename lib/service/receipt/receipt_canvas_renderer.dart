@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image/image.dart' as img;
 
 import '../../model/receipt/header_item.dart';
+import '../../model/receipt/receipt_item_text.dart';
 import '../../model/receipt/receipt_data.dart';
 import '../../model/receipt/receipt_date_format.dart';
 import '../../model/receipt/receipt_settings.dart';
@@ -255,10 +256,10 @@ double _renderContent(
   // tushadi. Totals ham `.line-item` klassiga ega, shu bilan bir xil.
   final rowGap = isCompact ? 0.0 : 1.0;
 
-  for (final item in receipt.items) {
+  for (final (index, item) in receipt.items.indexed) {
     final namePainter = TextPainter(
       text: TextSpan(
-        text: item.name,
+        text: receiptItemName(item, index, settings),
         style: const TextStyle(
           color: Color(0xFF000000),
           // message.txt: `.item-name` alohida font-size bermaydi, shuning
@@ -274,7 +275,7 @@ double _renderContent(
     y += namePainter.height + 6 * spacing * rowGap;
 
     y += paintRow(
-      '${item.qty}шт x ${item.price}',
+      '${item.qtyText}шт x ${item.price}',
       item.totalPrice,
       fontSize: 24,
       boldRight: true,

@@ -2,18 +2,26 @@ class ReceiptLayout {
   const ReceiptLayout({
     this.fieldsLayout = 'standard',
     this.dateFormat = 'date',
+    this.showProductNumbers = false,
   });
 
   final String fieldsLayout;
   final String dateFormat;
 
+  /// true bo'lsa, mahsulotlar nomi oldiga tartib raqami qo'yiladi ("1. Nom").
+  final bool showProductNumbers;
+
   factory ReceiptLayout.fromJson(Map<String, dynamic> json) {
     return ReceiptLayout(
       fieldsLayout: json['fields_layout'] as String? ?? 'standard',
       dateFormat: json['date_format'] as String? ?? 'date',
+      showProductNumbers: _asBool(json['show_product_numbers']),
     );
   }
 }
+
+bool _asBool(Object? v) =>
+    v == true || v == 1 || (v is String && (v == 'true' || v == '1'));
 
 class ReceiptTexts {
   const ReceiptTexts({this.footerNotice});
