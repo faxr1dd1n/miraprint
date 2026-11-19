@@ -13,7 +13,7 @@ class ResultBanner extends StatelessWidget {
     final (bg, border, fg) = result.success
         ? (
             AppColors.successContainer,
-            AppColors.success.withValues(alpha: 0.4),
+            AppColors.success.withValues(alpha: 0.35),
             AppColors.success,
           )
         : (
@@ -23,7 +23,7 @@ class ResultBanner extends StatelessWidget {
           );
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(12),
@@ -34,13 +34,13 @@ class ResultBanner extends StatelessWidget {
           Icon(
             result.success ? Icons.check_circle : Icons.error,
             color: fg,
-            size: 55,
+            size: 28,
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 14),
           Expanded(
             child: Text(
               result.message,
-              style: TextStyle(color: fg, fontSize: 22),
+              style: TextStyle(color: fg, fontSize: 15),
             ),
           ),
         ],

@@ -100,7 +100,7 @@ class _UpdateAvailableCardState extends State<UpdateAvailableCard> {
         final progress = _totalBytes > 0 ? _receivedBytes / _totalBytes : null;
 
         return Padding(
-          padding: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.only(bottom: 16),
           child: SectionCard(
             title: translate('update.title'),
             child: Column(

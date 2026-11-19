@@ -10,3 +10,8 @@ abstract class ServerEvent extends Equatable {
 class ServerStartRequested extends ServerEvent {
   const ServerStartRequested();
 }
+
+/// Ishga tushgandan keyin server javob bermay qolganida.
+class ServerStopped extends ServerEvent {
+  const ServerStopped();
+}

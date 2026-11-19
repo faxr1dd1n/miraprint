@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:miraprint/core/app_logger.dart';
 import 'package:miraprint/service/http/route/print_route.dart';
 import 'package:miraprint/service/http/route/printers_route.dart';
@@ -31,9 +33,17 @@ Middleware get corsMiddleware => (Handler innerHandler) {
 /// tanasi stream sifatida faqat bir marta o'qiladi — shuning uchun uni
 /// o'qib olib, xuddi shu matn bilan yangi `Request`/`Response` qaytaramiz
 /// (aks holda haqiqiy so'rov/javob bo'sh ketardi).
+/// UI uchun: printer serveriga kelgan so'rovlar soni va oxirgi murojaat vaqti.
+final ValueNotifier<int> printerRequestCount = ValueNotifier(0);
+final ValueNotifier<DateTime?> printerLastSeen = ValueNotifier(null);
+
 Middleware get requestLoggingMiddleware => (Handler innerHandler) {
   return (Request request) async {
     final stopwatch = Stopwatch()..start();
+    if (request.method != 'OPTIONS') {
+      printerRequestCount.value++;
+      printerLastSeen.value = DateTime.now();
+    }
     final requestBody = await request.readAsString();
     final forwardedRequest = request.change(body: requestBody);
 

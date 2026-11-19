@@ -60,13 +60,23 @@ bool BringExistingInstanceToFront() {
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
-  HANDLE single_instance_mutex =
-      ::CreateMutexW(nullptr, TRUE, L"Miraprint_SingleInstanceMutex");
-  if (single_instance_mutex != nullptr &&
-      ::GetLastError() == ERROR_ALREADY_EXISTS) {
-    BringExistingInstanceToFront();
-    ::CloseHandle(single_instance_mutex);
-    return EXIT_SUCCESS;
+  // Installer `--generate-cert <papka>` bilan chaqiradi: faqat sertifikat
+  // yaratib chiqib ketadi (Dart tomonida), shuning uchun bitta-nusxa
+  // tekshiruvi va avtoyuklanish yozuvi o'tkazib yuboriladi.
+  const bool is_cert_mode =
+      command_line != nullptr &&
+      std::wstring(command_line).find(L"--generate-cert") != std::wstring::npos;
+
+  HANDLE single_instance_mutex = nullptr;
+  if (!is_cert_mode) {
+    single_instance_mutex =
+        ::CreateMutexW(nullptr, TRUE, L"Miraprint_SingleInstanceMutex");
+    if (single_instance_mutex != nullptr &&
+        ::GetLastError() == ERROR_ALREADY_EXISTS) {
+      BringExistingInstanceToFront();
+      ::CloseHandle(single_instance_mutex);
+      return EXIT_SUCCESS;
+    }
   }
 
   // Attach to console when present (e.g., 'flutter run') or create a
@@ -111,7 +121,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   }
   window.SetQuitOnClose(true);
 
-  RegisterAppForStartup();
+  if (!is_cert_mode) {
+    RegisterAppForStartup();
+  }
 
   ::MSG msg;
   while (::GetMessage(&msg, nullptr, 0, 0)) {

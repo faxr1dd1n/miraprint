@@ -1,6 +1,7 @@
 {
   "app": {
-    "title": "Miraprint v{version}"
+    "title": "Miraprint v{version}",
+    "subtitle": "Receipt printer and ERA terminal bridge"
   },
   "common": {
     "refresh": "Refresh",
@@ -17,7 +18,16 @@
     "waiting": "Waiting",
     "starting": "Starting...",
     "running": "Running",
-    "error": "Error"
+    "error": "Error",
+    "hint_starting": "Please wait a few seconds",
+    "hint_ok": "Connection to the Mirasoft website is ready (printer and terminal)",
+    "printer_name": "Printer server",
+    "arca_name": "Arca server",
+    "port_busy": "port {port} is in use (another program or app instance)",
+    "stopped": "server stopped",
+    "arca_desc": "Website ↔ ERA terminal",
+    "printer_desc": "Website → receipt printer",
+    "hint_error": "The app is not fully working — check the server below"
   },
   "printer": {
     "title": "Printer",
@@ -32,13 +42,6 @@
     "sent_success": "Sent to printer {name}",
     "offline": "disconnected"
   },
-  "last_receipt": {
-    "title": "Last received receipt (POST /print)",
-    "empty": "No receipt received yet"
-  },
-  "receipt_preview": {
-    "logo_not_loaded": "(logo failed to load)"
-  },
   "update": {
     "title": "Update available",
     "check_button": "Check for updates",
@@ -48,6 +51,15 @@
     "downloaded_title": "Downloaded",
     "downloaded_body": "Click the button below to continue. Finder will open — drag Miraprint into the Applications folder, then reopen it. This app will now close.",
     "progress_of": "{received} MB / {total} MB",
-    "progress_downloaded": "{received} MB downloaded"
+    "progress_downloaded": "{received} MB downloaded",
+    "check_short": "Updates"
+  },
+  "arca": {
+    "requests": "Requests",
+    "last_request": "Last request",
+    "copy": "Copy"
+  },
+  "footer": {
+    "tray_hint": "If you close the window, the app keeps running in the tray."
   }
 }

@@ -51,8 +51,8 @@ class _PrinterSectionState extends State<PrinterSection> {
               '${stopwatch.elapsedMilliseconds}ms',
           for (final printer in printers)
             '  - ${printer.name}'
-            '${printer.isDefault ? ' (default)' : ''}'
-            '${printer.isAvailable ? '' : ' — ulanmagan'}',
+                '${printer.isDefault ? ' (default)' : ''}'
+                '${printer.isAvailable ? '' : ' — ulanmagan'}',
         ].join('\n'),
       );
 
@@ -220,7 +220,6 @@ class _PrinterSectionState extends State<PrinterSection> {
       trailing: IconButton.filledTonal(
         onPressed: _isLoadingPrinters ? null : _loadPrinters,
         icon: const Icon(Icons.refresh),
-        iconSize: 22,
         tooltip: translate('common.refresh'),
       ),
       child: Column(
@@ -234,10 +233,7 @@ class _PrinterSectionState extends State<PrinterSection> {
           else if (_printers.isEmpty)
             Text(
               translate('printer.not_found'),
-              style: TextStyle(
-                color: colorScheme.onSurfaceVariant,
-                fontSize: 18,
-              ),
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
             )
           else ...[
             DropdownMenu<Printer>(
@@ -245,7 +241,6 @@ class _PrinterSectionState extends State<PrinterSection> {
               initialSelection: _selectedPrinter,
               expandedInsets: EdgeInsets.zero,
               requestFocusOnTap: false,
-              textStyle: const TextStyle(fontSize: 18),
               dropdownMenuEntries: _printers
                   .map(
                     (printer) => DropdownMenuEntry(
@@ -255,7 +250,6 @@ class _PrinterSectionState extends State<PrinterSection> {
                           : '${printer.name} '
                                 '(${translate('printer.offline')})',
                       style: MenuItemButton.styleFrom(
-                        textStyle: const TextStyle(fontSize: 18),
                         foregroundColor: printer.isAvailable
                             ? null
                             : colorScheme.onSurfaceVariant,
@@ -285,7 +279,6 @@ class _PrinterSectionState extends State<PrinterSection> {
                 _isTestPrinting
                     ? translate('common.sending')
                     : translate('printer.test_print'),
-                style: const TextStyle(fontSize: 18),
               ),
             ),
             const SizedBox(height: 12),
@@ -294,14 +287,11 @@ class _PrinterSectionState extends State<PrinterSection> {
                   ? null
                   : _openCustomTestPrintDialog,
               icon: const Icon(Icons.data_object),
-              label: Text(
-                translate('printer.custom_test_print'),
-                style: const TextStyle(fontSize: 18),
-              ),
+              label: Text(translate('printer.custom_test_print')),
             ),
           ],
           if (_testPrintResult != null) ...[
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             ResultBanner(result: _testPrintResult!),
           ],
         ],

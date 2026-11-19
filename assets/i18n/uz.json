@@ -1,6 +1,7 @@
 {
   "app": {
-    "title": "Miraprint v{version}"
+    "title": "Miraprint v{version}",
+    "subtitle": "Chek printer va ERA terminal ko'prigi"
   },
   "common": {
     "refresh": "Yangilash",
@@ -17,7 +18,16 @@
     "waiting": "Kutilmoqda",
     "starting": "Ishga tushmoqda...",
     "running": "Ishlayapti",
-    "error": "Xato"
+    "error": "Xato",
+    "hint_starting": "Bir necha soniya kuting",
+    "hint_ok": "Mirasoft sayti bilan ulanish tayyor (printer va terminal)",
+    "printer_name": "Printer serveri",
+    "arca_name": "Arca serveri",
+    "port_busy": "{port}-port band (boshqa dastur yoki ilova nusxasi ishlatmoqda)",
+    "stopped": "server to'xtab qoldi",
+    "arca_desc": "Sayt ↔ ERA terminali",
+    "printer_desc": "Sayt → chek printeri",
+    "hint_error": "Ilova to'liq ishlamayapti — pastdagi serverni tekshiring"
   },
   "printer": {
     "title": "Printer",
@@ -32,13 +42,6 @@
     "sent_success": "{name} printerga yuborildi",
     "offline": "ulanmagan"
   },
-  "last_receipt": {
-    "title": "So'nggi qabul qilingan chek (POST /print)",
-    "empty": "Hali hech qanday chek qabul qilinmagan"
-  },
-  "receipt_preview": {
-    "logo_not_loaded": "(logo yuklanmadi)"
-  },
   "update": {
     "title": "Yangilanish mavjud",
     "check_button": "Yangilanishni tekshirish",
@@ -48,6 +51,15 @@
     "downloaded_title": "Yuklab olindi",
     "downloaded_body": "Davom etish uchun quyidagi tugmani bosing. Finder ochiladi — Miraprint'ni Applications papkasiga torting, so'ng uni qayta oching. Bu ilova hozir yopiladi.",
     "progress_of": "{received} MB / {total} MB",
-    "progress_downloaded": "{received} MB yuklandi"
+    "progress_downloaded": "{received} MB yuklandi",
+    "check_short": "Yangilanish"
+  },
+  "arca": {
+    "requests": "So'rovlar",
+    "last_request": "Oxirgi murojaat",
+    "copy": "Nusxalash"
+  },
+  "footer": {
+    "tray_hint": "Oynani yopsangiz, ilova tray'da ishlashda davom etadi."
   }
 }

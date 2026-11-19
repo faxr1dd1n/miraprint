@@ -36,6 +36,9 @@ dependencies:
   flutter_translate:
     path: packages/flutter_translate
   shared_preferences: ^2.2.0
+  basic_utils: ^5.8.2
+  asn1lib: ^1.6.8
+  pointycastle: ^4.0.0
 
 dev_dependencies:
   flutter_test:

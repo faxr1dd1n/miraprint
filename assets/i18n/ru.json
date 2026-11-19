@@ -1,6 +1,7 @@
 {
   "app": {
-    "title": "Miraprint v{version}"
+    "title": "Miraprint v{version}",
+    "subtitle": "Мост для чековых принтеров и терминала ERA"
   },
   "common": {
     "refresh": "Обновить",
@@ -17,7 +18,16 @@
     "waiting": "Ожидание",
     "starting": "Запускается...",
     "running": "Работает",
-    "error": "Ошибка"
+    "error": "Ошибка",
+    "hint_starting": "Подождите несколько секунд",
+    "hint_ok": "Связь с сайтом Mirasoft готова (принтер и терминал)",
+    "printer_name": "Сервер принтера",
+    "arca_name": "Сервер Arca",
+    "port_busy": "порт {port} занят (другая программа или копия приложения)",
+    "stopped": "сервер остановился",
+    "arca_desc": "Сайт ↔ терминал ERA",
+    "printer_desc": "Сайт → чековый принтер",
+    "hint_error": "Приложение работает не полностью — проверьте сервер ниже"
   },
   "printer": {
     "title": "Принтер",
@@ -32,13 +42,6 @@
     "sent_success": "Отправлено на принтер {name}",
     "offline": "не подключен"
   },
-  "last_receipt": {
-    "title": "Последний полученный чек (POST /print)",
-    "empty": "Чеков пока не поступало"
-  },
-  "receipt_preview": {
-    "logo_not_loaded": "(логотип не загружен)"
-  },
   "update": {
     "title": "Доступно обновление",
     "check_button": "Проверить обновления",
@@ -48,6 +51,15 @@
     "downloaded_title": "Загружено",
     "downloaded_body": "Нажмите кнопку ниже, чтобы продолжить. Откроется Finder — перетащите Miraprint в папку Applications, затем откройте его заново. Приложение сейчас закроется.",
     "progress_of": "{received} МБ / {total} МБ",
-    "progress_downloaded": "{received} МБ загружено"
+    "progress_downloaded": "{received} МБ загружено",
+    "check_short": "Обновления"
+  },
+  "arca": {
+    "requests": "Запросы",
+    "last_request": "Последнее обращение",
+    "copy": "Копировать"
+  },
+  "footer": {
+    "tray_hint": "Если закрыть окно, приложение продолжит работать в трее."
   }
 }

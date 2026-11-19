@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:miraprint/model/printer/print_request.dart';
 import 'package:miraprint/model/printer/print_response.dart';
 import 'package:miraprint/service/printer/receipt_dispatcher.dart';
-import 'package:miraprint/service/receipt/last_receipt_notifier.dart';
 import 'package:shelf/shelf.dart';
 
 Future<Response> handlePostPrint(Request request) async {
@@ -11,10 +10,6 @@ Future<Response> handlePostPrint(Request request) async {
     final body = await request.readAsString();
     final json = jsonDecode(body) as Map<String, dynamic>;
     final printRequest = PrintRequest.fromJson(json);
-    lastReceiptNotifier.value = LastReceipt(
-      check: printRequest.check,
-      settings: printRequest.receiptSettings,
-    );
 
     await sendReceiptToPrinter(
       printerName: printRequest.printer.name,

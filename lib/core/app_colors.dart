@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
 
-/// Butun ilova bo'ylab bitta xil ko'rinishda ishlatiladigan semantik ranglar.
-///
-/// Brend/neytral ranglar uchun [Theme.colorScheme] ishlatiladi — bu yerda
-/// faqat Material 3 `ColorScheme`da tayyor roli yo'q holatlar (muvaffaqiyat,
-/// ogohlantirish) uchun konstantalar beriladi.
+/// Dark dizayn palitrasi. Hamma ranglar shu yerda — ekranlarda to'g'ridan-to'g'ri
+/// `Color(0x...)` yozilmaydi.
 abstract final class AppColors {
-  static const success = Color(0xFF15803D);
-  static const successContainer = Color(0xFFDCFCE7);
-  static const warning = Color(0xFFC2410C);
+  // Fon qatlamlari (qoradan ochiqqa)
+  static const background = Color(0xFF0D0F14);
+  static const surface = Color(0xFF151922);
+  static const surfaceHigh = Color(0xFF1C212C);
+  static const border = Color(0xFF262C3A);
+
+  // Matn
+  static const textPrimary = Color(0xFFE8EBF2);
+  static const textSecondary = Color(0xFF8B93A7);
+
+  // Aksent va holat ranglari
+  static const accent = Color(0xFF5B8CFF);
+  static const success = Color(0xFF3DD68C);
+  static const successContainer = Color(0xFF12281F);
+  static const warning = Color(0xFFF5A524);
+  static const danger = Color(0xFFFF6B6B);
 }
