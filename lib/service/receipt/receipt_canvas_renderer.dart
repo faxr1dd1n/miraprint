@@ -57,18 +57,25 @@ double _renderContent(
     required double fontSize,
     bool boldLeft = false,
     bool boldRight = false,
+    bool strikeRight = false,
   }) {
-    TextStyle style(bool bold) => TextStyle(
+    TextStyle style(bool bold, {bool strike = false}) => TextStyle(
       color: const Color(0xFF000000),
       fontSize: fontSize,
       fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+      decoration: strike ? TextDecoration.lineThrough : null,
+      decorationColor: const Color(0xFF000000),
+      decorationThickness: 2,
     );
     final leftPainter = TextPainter(
       text: TextSpan(text: left, style: style(boldLeft)),
       textDirection: TextDirection.ltr,
     )..layout(maxWidth: _printWidth * 0.65);
     final rightPainter = TextPainter(
-      text: TextSpan(text: right, style: style(boldRight)),
+      text: TextSpan(
+        text: right,
+        style: style(boldRight, strike: strikeRight),
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
 
@@ -234,10 +241,11 @@ double _renderContent(
       item.totalPrice,
       fontSize: 24,
       boldRight: true,
+      strikeRight: item.hasDiscount,
     );
     y += 4 * spacing * rowGap;
 
-    if (item.discountText != null && item.discountPrice != null) {
+    if (item.hasDiscount) {
       // Receipt.vue: `.item-discount` oddiy, `.item-price-without-discount`
       // esa `font-weight-bold` klassiga ega — chegirmadan keyingi yakuniy
       // summa qalin bo'lishi kerak.

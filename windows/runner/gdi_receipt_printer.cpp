@@ -103,11 +103,13 @@ Gdiplus::StringFormat& TightFormat() {
 
 // `Gdiplus::Font` nusxalash konstruktori yo'q (`private`) — shuning uchun
 // qiymat bo'yicha emas, `unique_ptr` orqali qaytariladi.
-std::unique_ptr<Gdiplus::Font> MakeFont(float sizePt, bool bold) {
+std::unique_ptr<Gdiplus::Font> MakeFont(float sizePt, bool bold,
+                                        bool strikeout = false) {
+  int style = bold ? Gdiplus::FontStyleBold : Gdiplus::FontStyleRegular;
+  if (strikeout) style |= Gdiplus::FontStyleStrikeout;
   return std::make_unique<Gdiplus::Font>(
       L"Arial", sizePt <= 0 ? 1.0f : sizePt,
-      bold ? Gdiplus::FontStyleBold : Gdiplus::FontStyleRegular,
-      Gdiplus::UnitPoint);
+      static_cast<Gdiplus::FontStyle>(style), Gdiplus::UnitPoint);
 }
 
 float MeasureWidth(Gdiplus::Graphics& g, Gdiplus::Font& font,
@@ -307,9 +309,11 @@ void DrawBlock(Gdiplus::Graphics& g, Gdiplus::SolidBrush& blackBrush,
     float fontSize = static_cast<float>(GetNum(block, "fontSize", 9));
     bool leftBold = GetBool(block, "leftBold");
     bool rightBold = GetBool(block, "rightBold");
+    // Chegirmali mahsulotda asl narx ustidan chiziladi.
+    bool rightStrike = GetBool(block, "rightStrike");
     auto leftFontOwner = MakeFont(fontSize, leftBold);
     auto& leftFont = *leftFontOwner;
-    auto rightFontOwner = MakeFont(fontSize, rightBold);
+    auto rightFontOwner = MakeFont(fontSize, rightBold, rightStrike);
     auto& rightFont = *rightFontOwner;
     auto rightText = Utf8ToWide(GetStr(block, "right"));
     auto leftText = Utf8ToWide(GetStr(block, "left"));

@@ -97,14 +97,7 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
   if (currentNumber != null) {
     blocks
       ..add(_spacer(halveInCompact(10)))
-      ..add(
-        _text(
-          currentNumber,
-          fontSize: pt(32),
-          bold: true,
-          align: 'center',
-        ),
-      )
+      ..add(_text(currentNumber, fontSize: pt(32), bold: true, align: 'center'))
       ..add(_spacer(halveInCompact(20)));
   }
 
@@ -134,13 +127,7 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
 
   for (final item in receipt.items) {
     blocks
-      ..add(
-        _text(
-          item.name,
-          fontSize: _baseFontSize,
-          bold: true,
-        ),
-      )
+      ..add(_text(item.name, fontSize: _baseFontSize, bold: true))
       ..add(_spacer(zeroInCompact(6)))
       ..add({
         'type': 'row',
@@ -148,11 +135,12 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
         'right': item.totalPrice,
         'leftBold': false,
         'rightBold': true,
+        'rightStrike': item.hasDiscount,
         'fontSize': _baseFontSize,
       })
       ..add(_spacer(zeroInCompact(4)));
 
-    if (item.discountText != null && item.discountPrice != null) {
+    if (item.hasDiscount) {
       blocks
         ..add({
           'type': 'row',

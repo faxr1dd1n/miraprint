@@ -138,5 +138,33 @@ void main() {
       expect(rows, contains('7шт x 10 000'));
       expect(rows, contains('2.5шт x 10 000'));
     });
+
+    test(
+      'chegirmali mahsulot: asl narx chiziladi, chegirma qatori chiqadi',
+      () async {
+        final receipt = _receipt([
+          {
+            ..._item('Somsa', 1),
+            'discount_text': 'Скидка 10%',
+            'discount_price': '9 000.00 сўм',
+          },
+          {..._item('Choy', 1), 'discount_text': '', 'discount_price': ''},
+          _item('Non', 1),
+        ]);
+        final payload = await buildReceiptGdiPayload(receipt);
+        final rows = (payload['blocks'] as List)
+            .cast<Map<String, Object?>>()
+            .where(
+              (b) => b['type'] == 'row' && b['left'].toString().contains('шт'),
+            )
+            .toList();
+        expect(rows.map((r) => r['rightStrike']), [true, false, false]);
+
+        final all = (payload['blocks'] as List).cast<Map<String, Object?>>();
+        expect(all.where((b) => b['left'] == 'Скидка 10%').length, 1);
+        // bo'sh `discount_text` — qo'shimcha qator chiqmaydi
+        expect(all.where((b) => b['right'] == '').length, 0);
+      },
+    );
   });
 }

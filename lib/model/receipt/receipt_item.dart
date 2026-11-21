@@ -17,6 +17,13 @@ class ReceiptItem {
   final String? discountText;
   final String? discountPrice;
 
+  /// Chegirma qatori chiqishi uchun `discount_text` va `discount_price`
+  /// ikkalasi ham kelgan va bo'sh bo'lmasligi kerak. Shunda 1-qatordagi
+  /// asl narx ustidan chiziladi.
+  bool get hasDiscount =>
+      (discountText?.isNotEmpty ?? false) &&
+      (discountPrice?.isNotEmpty ?? false);
+
   /// Chekda ko'rsatiladigan miqdor: butun bo'lsa "7", kasr bo'lsa "7.5"
   /// (ortiqcha nollarsiz, 3 xonagacha).
   String get qtyText {
