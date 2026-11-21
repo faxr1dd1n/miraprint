@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:miraprint/model/printer/print_request.dart';
 import 'package:miraprint/model/receipt/receipt_data.dart';
 import 'package:miraprint/model/receipt/receipt_item.dart';
-import 'package:miraprint/model/receipt/receipt_settings.dart';
 import 'package:miraprint/service/receipt/receipt_gdi_blocks.dart';
 
 ReceiptData _receipt(List<Map<String, Object?>> items) => ReceiptData.fromJson({
@@ -40,79 +39,104 @@ void main() {
     });
   });
 
-  group('show_product_numbers', () {
-    test(
-      'sozlama o\'qiladi, `checkSettings` va `check_settings` ikkalasi ham',
-      () {
-        // jsonDecode — haqiqiy so'rovdagidek ichma-ich Map<String, dynamic> beradi.
-        Map<String, dynamic> body(String key, Object? show) =>
-            jsonDecode(
-                  jsonEncode({
-                    'printer': {'name': 'P'},
-                    'check': {},
-                    key: {
-                      'layout': {
-                        'date_format': 'centered',
-                        'show_product_numbers': show,
-                      },
-                    },
-                  }),
-                )
-                as Map<String, dynamic>;
+  group('check_settings (yangi format)', () {
+    // Haqiqiy so'rovdan olingan namuna (printer alohida, qolgani
+    // check_settings ichida; `check` kaliti endi o'qilmaydi).
+    Map<String, dynamic> body(String key, {Map<String, Object?>? extra}) =>
+        jsonDecode(
+              jsonEncode({
+                'printer': {'name': 'Printer_POS_80'},
+                key: {
+                  'headers': [
+                    {'title': 'Дата', 'val': '21.11.2026, 11:13:16'},
+                    {'title': 'Филиал', 'val': 'Malika'},
+                  ],
+                  'items': [_item('Kartoshka Somsa', 1)],
+                  'totals': [
+                    {'title': 'Итого', 'val': '8 000.00 сўм', 'big': true},
+                  ],
+                  'logo': 'https://example.com/logo.jpg',
+                  'current_number': '60',
+                  'spacing': 'compact',
+                  'fields_layout': 'space-between',
+                  'footer_note_text': 'Спасибо!',
+                  ...?extra,
+                },
+              }),
+            )
+            as Map<String, dynamic>;
 
-        for (final key in ['check_settings', 'checkSettings']) {
-          final r = PrintRequest.fromJson(body(key, true));
-          expect(
-            r.receiptSettings?.layout.showProductNumbers,
-            true,
-            reason: key,
-          );
-          expect(r.receiptSettings?.layout.dateFormat, 'centered');
-        }
-        expect(
-          PrintRequest.fromJson(
-            body('check_settings', false),
-          ).receiptSettings!.layout.showProductNumbers,
-          false,
-        );
-        // berilmasa — o'chiq (avvalgi xulq saqlanadi)
-        expect(const ReceiptLayout().showProductNumbers, false);
-      },
-    );
+    test('`check_settings` va `checkSettings` ikkalasi ham o\'qiladi', () {
+      for (final key in ['check_settings', 'checkSettings']) {
+        final r = PrintRequest.fromJson(body(key));
+        expect(r.printer.name, 'Printer_POS_80', reason: key);
+        expect(r.check.headers.length, 2, reason: key);
+        expect(r.check.items.single.name, 'Kartoshka Somsa', reason: key);
+        expect(r.check.currentNumber, '60', reason: key);
+        expect(r.receiptSettings.spacing, 'compact', reason: key);
+        expect(r.receiptSettings.fieldsLayout, 'space-between', reason: key);
+        expect(r.receiptSettings.footerNoteText, 'Спасибо!', reason: key);
+      }
+    });
 
-    test(
-      'chek bloklarida nom oldiga raqam qo\'yiladi / qo\'yilmaydi, kasr miqdor chiqadi',
-      () async {
-        final receipt = _receipt([_item('suv', 7), _item('go\'sht', 2.5)]);
+    test('kalitlar kelmasa — default va null', () {
+      final r = PrintRequest.fromJson({
+        'printer': {'name': 'P'},
+        'check_settings': <String, dynamic>{},
+      });
+      expect(r.receiptSettings.spacing, 'normal');
+      expect(r.receiptSettings.fieldsLayout, 'standard');
+      expect(r.receiptSettings.footerNoteText, isNull);
+      expect(r.check.currentNumber, isNull);
+      expect(r.check.status, isNull);
+    });
 
-        Future<List<String>> texts(ReceiptSettings? s) async {
-          final payload = await buildReceiptGdiPayload(receipt, settings: s);
-          final blocks = (payload['blocks'] as List)
-              .cast<Map<String, Object?>>();
-          return [
-            for (final b in blocks) ...[
-              if (b['type'] == 'text') b['text'] as String,
-              if (b['type'] == 'row') b['left'] as String,
-            ],
-          ];
-        }
+    test('check_settings bo\'lmasa xato', () {
+      expect(
+        () => PrintRequest.fromJson({
+          'printer': {'name': 'P'},
+        }),
+        throwsFormatException,
+      );
+    });
 
-        final plain = await texts(null);
-        expect(plain, contains('suv'));
-        expect(plain, contains('go\'sht'));
-        expect(plain, contains('7шт x 10 000'));
-        expect(plain, contains('2.5шт x 10 000')); // kasr miqdor
+    test('status va current_number chek bloklarida chiqadi', () async {
+      final r = PrintRequest.fromJson(
+        body('check_settings', extra: {'status': 'НЕДЕЙСТВИТЕЛЬНЫЙ ЧЕК'}),
+      );
+      final payload = await buildReceiptGdiPayload(
+        r.check,
+        settings: r.receiptSettings,
+      );
+      final blocks = (payload['blocks'] as List).cast<Map<String, Object?>>();
+      expect(
+        blocks.any(
+          (b) =>
+              b['type'] == 'statusBox' && b['text'] == 'НЕДЕЙСТВИТЕЛЬНЫЙ ЧЕК',
+        ),
+        isTrue,
+      );
+      expect(
+        blocks.any((b) => b['type'] == 'text' && b['text'] == '60'),
+        isTrue,
+      );
+      // space-between: header'lar `row` bloki bo'lib chiqadi
+      expect(
+        blocks.any((b) => b['type'] == 'row' && b['left'] == 'Дата'),
+        isTrue,
+      );
+    });
 
-        final numbered = await texts(
-          ReceiptSettings.fromJson(
-            jsonDecode('{"layout":{"show_product_numbers":true}}')
-                as Map<String, dynamic>,
-          ),
-        );
-        expect(numbered, contains('1. suv'));
-        expect(numbered, contains('2. go\'sht'));
-        expect(numbered, isNot(contains('suv')));
-      },
-    );
+    test('kasr miqdor chek bloklarida chiqadi', () async {
+      final receipt = _receipt([_item('suv', 7), _item('go\'sht', 2.5)]);
+      final payload = await buildReceiptGdiPayload(receipt);
+      final blocks = (payload['blocks'] as List).cast<Map<String, Object?>>();
+      final rows = [
+        for (final b in blocks)
+          if (b['type'] == 'row') b['left'] as String,
+      ];
+      expect(rows, contains('7шт x 10 000'));
+      expect(rows, contains('2.5шт x 10 000'));
+    });
   });
 }

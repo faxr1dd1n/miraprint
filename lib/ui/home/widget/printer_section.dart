@@ -182,7 +182,6 @@ class _PrinterSectionState extends State<PrinterSection> {
     return const ReceiptData(
       logo: 'https://mirasoft.io/assets/i/logo.jpg',
       headers: [
-        HeaderItem(key: 'order_number', title: 'Номер заказа', val: '1'),
         HeaderItem(title: 'Компания', val: 'Miraprint'),
       ],
       items: [
@@ -195,6 +194,7 @@ class _PrinterSectionState extends State<PrinterSection> {
       ],
       totals: [TotalItem(title: 'Jami', val: '10 000', big: true)],
       barcode: '',
+      currentNumber: '1',
       // Barcha mavjud ikonkalarni + bitta mavjud bo'lmagan nomni
       // (`youtube` — zaxira sifatida telegram chiqishi kerak) bir yo'la
       // sinash uchun.

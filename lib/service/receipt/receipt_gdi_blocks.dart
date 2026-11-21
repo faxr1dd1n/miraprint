@@ -6,10 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 
-import '../../model/receipt/header_item.dart';
 import '../../model/receipt/receipt_data.dart';
-import '../../model/receipt/receipt_date_format.dart';
-import '../../model/receipt/receipt_item_text.dart';
 import '../../model/receipt/receipt_settings.dart';
 import 'social_icon_assets.dart';
 
@@ -52,23 +49,8 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
   double zeroInCompact(double px) => isCompact ? 0 : pt(px);
   double halveInCompact(double px) => pt(isCompact ? px / 2 : px);
 
-  final dateFormat = settings?.layout.dateFormat ?? 'date';
-  final isCentered = isCenteredDateFormat(dateFormat);
-
-  HeaderItem? statusHeader;
-  HeaderItem? dateHeader;
-  HeaderItem? orderNumberHeader;
-  for (final header in receipt.headers) {
-    if (header.key == 'status') statusHeader = header;
-    if (header.key == 'receipt_date') dateHeader = header;
-    if (header.key == 'order_number') orderNumberHeader = header;
-  }
-  final remainingHeaders = receipt.headers.where((header) {
-    if (header.key == 'status') return false;
-    if (header.key == 'order_number') return false;
-    if (isCentered && header.key == 'receipt_date') return false;
-    return true;
-  }).toList();
+  final status = receipt.status;
+  final currentNumber = receipt.currentNumber;
 
   final blocks = <Map<String, Object?>>[];
 
@@ -96,24 +78,12 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
     }
   }
 
-  if (isCentered && dateHeader != null) {
-    blocks
-      ..add(
-        _text(
-          formatReceiptDate(dateHeader.val, dateFormat),
-          fontSize: _baseFontSize,
-          align: 'center',
-        ),
-      )
-      ..add(_spacer(halveInCompact(8)));
-  }
-
   // Receipt.vue: `.receipt-status` — ramka (2px), katta harflar, qalin.
-  if (statusHeader != null && statusHeader.val.isNotEmpty) {
+  if (status != null) {
     blocks
       ..add({
         'type': 'statusBox',
-        'text': statusHeader.val.toUpperCase(),
+        'text': status.toUpperCase(),
         'fontSize': _statusFontSize,
         'padding': pt(8),
         'borderWidth': pt(2),
@@ -124,12 +94,12 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
       ..add(_spacer(halveInCompact(12)));
   }
 
-  if (orderNumberHeader != null && orderNumberHeader.val.isNotEmpty) {
+  if (currentNumber != null) {
     blocks
       ..add(_spacer(halveInCompact(10)))
       ..add(
         _text(
-          orderNumberHeader.val,
+          currentNumber,
           fontSize: pt(32),
           bold: true,
           align: 'center',
@@ -139,8 +109,8 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
   }
 
   // Receipt.vue: `<strong>{{ title }}:</strong><span>{{ val }}</span>`.
-  for (final header in remainingHeaders) {
-    if (settings?.layout.fieldsLayout == 'space-between') {
+  for (final header in receipt.headers) {
+    if (settings?.fieldsLayout == 'space-between') {
       blocks.add({
         'type': 'row',
         'left': header.title,
@@ -162,11 +132,11 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
 
   blocks.add(_divider(halveInCompact(6)));
 
-  for (final (index, item) in receipt.items.indexed) {
+  for (final item in receipt.items) {
     blocks
       ..add(
         _text(
-          receiptItemName(item, index, settings),
+          item.name,
           fontSize: _baseFontSize,
           bold: true,
         ),
@@ -199,22 +169,26 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
   }
 
   // Receipt.vue: `.total { font-weight: bold }` — BARCHA totals qatori
-  // qalin, `big` faqat shriftni kattalashtiradi.
+  // qalin; bundan tashqari `big` — qalin va katta shrift, `light` — oddiy
+  // (qalin emas) matn.
   for (final total in receipt.totals) {
+    final bold = total.big || !total.light;
     blocks
       ..add({
         'type': 'row',
         'left': total.title,
         'right': total.val,
-        'leftBold': true,
-        'rightBold': true,
+        'leftBold': bold,
+        'rightBold': bold,
         'fontSize': total.big ? _totalBigFontSize : _baseFontSize,
       })
       ..add(_spacer(zeroInCompact(total.big ? 10 : 4)));
   }
 
   if (receipt.socials.isNotEmpty) {
-    blocks.add(_spacer(halveInCompact(8)));
+    // Normal holatda totals va ikonkalar orasida aniq masofa (8 edi, juda
+    // zich — compact'ga o'xshab qolgan); compact'da yarmiga tushadi.
+    blocks.add(_spacer(halveInCompact(16)));
     final items = <Map<String, Object?>>[];
     for (final social in receipt.socials) {
       Uint8List iconBytes;
@@ -275,11 +249,9 @@ Future<Map<String, Object?>> buildReceiptGdiPayload(
   }
 
   // Receipt.vue `.thanks`: markazlashgan, letter-spacing:1px.
-  final footerNotice = settings?.texts.footerNotice;
+  final footerNotice = settings?.footerNoteText;
   if (footerNotice != null && footerNotice.isNotEmpty) {
     blocks
-      ..add(_spacer(halveInCompact(12)))
-      ..add(_divider(0))
       ..add(_spacer(halveInCompact(12)))
       ..add(
         _text(

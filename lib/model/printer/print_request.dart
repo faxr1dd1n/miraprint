@@ -6,27 +6,28 @@ class PrintRequest {
   const PrintRequest({
     required this.printer,
     required this.check,
-    this.receiptSettings,
+    required this.receiptSettings,
   });
 
   final PrinterInfo printer;
   final ReceiptData check;
-  final ReceiptSettings? receiptSettings;
+  final ReceiptSettings receiptSettings;
 
   factory PrintRequest.fromJson(Map<String, dynamic> json) {
-    // Sayt "check_settings" (snake_case) yoki "checkSettings" nomi bilan
-    // yuborishi mumkin — ikkalasi ham qabul qilinadi.
+    // Chek mazmuni ham, sozlamalari ham faqat "check_settings" (yoki
+    // "checkSettings") ichidan o'qiladi; `printer` alohida kalit.
     final settingsJson =
         (json['check_settings'] ?? json['checkSettings'])
             as Map<String, dynamic>?;
+    if (settingsJson == null) {
+      throw const FormatException('check_settings topilmadi');
+    }
     return PrintRequest(
       printer: PrinterInfo.fromJson(
         json['printer'] as Map<String, dynamic>? ?? {},
       ),
-      check: ReceiptData.fromJson(json['check'] as Map<String, dynamic>? ?? {}),
-      receiptSettings: settingsJson != null
-          ? ReceiptSettings.fromJson(settingsJson)
-          : null,
+      check: ReceiptData.fromJson(settingsJson),
+      receiptSettings: ReceiptSettings.fromJson(settingsJson),
     );
   }
 }

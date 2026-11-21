@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image/image.dart' as img;
 
-import '../../model/receipt/header_item.dart';
-import '../../model/receipt/receipt_item_text.dart';
 import '../../model/receipt/receipt_data.dart';
-import '../../model/receipt/receipt_date_format.dart';
 import '../../model/receipt/receipt_settings.dart';
 import '../../model/receipt/social_link.dart';
 import 'social_icon_assets.dart';
@@ -52,8 +49,7 @@ double _renderContent(
   double y = 0;
   final spacing = _spacingMultiplier(settings?.spacing ?? 'normal');
   final isCompact = settings?.spacing == 'compact';
-  final spaceBetweenLayout = settings?.layout.fieldsLayout == 'space-between';
-  final dateFormat = settings?.layout.dateFormat ?? 'date';
+  final spaceBetweenLayout = settings?.fieldsLayout == 'space-between';
 
   double paintRow(
     String left,
@@ -96,47 +92,12 @@ double _renderContent(
     y += 2 + after * spacing;
   }
 
-  // `header.key == 'receipt_date'` — sana HEADER ELEMENTINING kaliti;
-  // `layout.date_format` esa sozlamalardagi FORMAT nomi — ikkisi boshqa-
-  // boshqa narsa, avval bittasi ikkinchisi bilan aralashtirilgan edi.
-  HeaderItem? dateHeader;
-  for (final header in receipt.headers) {
-    if (header.key == 'receipt_date') {
-      dateHeader = header;
-      break;
-    }
-  }
+  // Receipt.vue: `statusLabel` logotipdan keyin, header maydonlaridan
+  // OLDIN, alohida ramkali blok (`.receipt-status`) sifatida chiqariladi.
+  final status = receipt.status;
+  final currentNumber = receipt.currentNumber;
 
-  final isCenteredDate = isCenteredDateFormat(dateFormat);
-
-  if (isCenteredDate && dateHeader != null) {
-    final painter = TextPainter(
-      text: TextSpan(
-        text: formatReceiptDate(dateHeader.val, dateFormat),
-        style: const TextStyle(color: Color(0xFF000000), fontSize: 22),
-      ),
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: _printWidth);
-    if (canvas != null) {
-      painter.paint(canvas, Offset((_printWidth - painter.width) / 2, y));
-    }
-    y += painter.height + 8 * spacing;
-  }
-
-  // Receipt.vue: `statusLabel` header ro'yxatidan ajratib olinadi va
-  // logotip/sanadan keyin, header maydonlaridan OLDIN, alohida ramkali
-  // blok (`.receipt-status`) sifatida chiqariladi — umumiy header
-  // qatorida qaytarilmaydi (pastdagi asosiy tsiklda `key == 'status'`
-  // o'tkazib yuboriladi).
-  HeaderItem? statusHeader;
-  HeaderItem? orderNumberHeader;
-  for (final header in receipt.headers) {
-    if (header.key == 'status') statusHeader = header;
-    if (header.key == 'order_number') orderNumberHeader = header;
-  }
-
-  if (statusHeader != null && statusHeader.val.isNotEmpty) {
+  if (status != null) {
     // Windows'dagi `_statusFontSize` (14px CSS ×0.75=10.5pt) bilan bir xil
     // naqsh (CSS px ×2) — ilgari 24 (=12px×2) edi, bu Windows'dan (14px×2=28)
     // kichikroq chiqishiga sabab bo'lgan.
@@ -153,7 +114,7 @@ double _renderContent(
 
     final painter = TextPainter(
       text: TextSpan(
-        text: statusHeader.val.toUpperCase(),
+        text: status.toUpperCase(),
         style: const TextStyle(
           color: Color(0xFF000000),
           fontSize: statusFontSize,
@@ -186,10 +147,10 @@ double _renderContent(
     y += boxHeight + 12 * spacing;
   }
 
-  if (orderNumberHeader != null && orderNumberHeader.val.isNotEmpty) {
+  if (currentNumber != null) {
     final painter = TextPainter(
       text: TextSpan(
-        text: orderNumberHeader.val,
+        text: currentNumber,
         style: const TextStyle(
           color: Color(0xFF000000),
           fontSize: 64,
@@ -206,13 +167,7 @@ double _renderContent(
   }
 
   for (final header in receipt.headers) {
-    if (header.key == 'status') continue;
-    if (header.key == 'order_number') continue;
-    if (isCenteredDate && header.key == 'receipt_date') continue;
-
-    final displayVal = header.key == 'receipt_date'
-        ? formatReceiptDate(header.val, dateFormat)
-        : header.val;
+    final displayVal = header.val;
 
     // Receipt.vue: `.receipt-block--header > p { margin-bottom: 0.25rem }`,
     // compact holatda esa `.receipt--spacing-compact ... { margin-bottom: 0 }`
@@ -256,10 +211,10 @@ double _renderContent(
   // tushadi. Totals ham `.line-item` klassiga ega, shu bilan bir xil.
   final rowGap = isCompact ? 0.0 : 1.0;
 
-  for (final (index, item) in receipt.items.indexed) {
+  for (final item in receipt.items) {
     final namePainter = TextPainter(
       text: TextSpan(
-        text: receiptItemName(item, index, settings),
+        text: item.name,
         style: const TextStyle(
           color: Color(0xFF000000),
           // message.txt: `.item-name` alohida font-size bermaydi, shuning
@@ -299,14 +254,15 @@ double _renderContent(
   }
 
   for (final total in receipt.totals) {
-    // Receipt.vue: `.total { font-weight: bold }` — hamma totals qatori
-    // qalin, `big` (`.total-xl`) faqat shriftni kattalashtiradi.
+    // `big` — qalin va katta shrift; `light` — oddiy (qalin emas) matn;
+    // ikkalasi ham bo'lmasa avvalgidek qalin.
+    final bold = total.big || !total.light;
     y += paintRow(
       total.title,
       total.val,
       fontSize: total.big ? 32 : 24,
-      boldLeft: true,
-      boldRight: true,
+      boldLeft: bold,
+      boldRight: bold,
     );
     y += (total.big ? 10 : 4) * spacing * rowGap;
   }
@@ -315,6 +271,9 @@ double _renderContent(
   // har bir element ikonka + nom yonma-yon (`d-flex align-items-center`),
   // qatorga sig'masa keyingisiga o'tadi (`d-inline-block` oqimi).
   if (socialIcons != null && socialIcons.isNotEmpty) {
+    // Normal holatda totals va ikonkalar orasida aniq masofa (compact'da
+    // `spacing` yarmiga tushadi).
+    y += 16 * spacing;
     y += _paintSocialIcons(canvas, y, socialIcons) + 12 * spacing;
   }
 
@@ -434,10 +393,10 @@ Future<img.Image> renderReceiptTextImage(
   );
 }
 
-/// Barcode'dan keyin chiqadigan chiziq + `texts.footer_notice` matni.
+/// Barcode'dan keyin chiqadigan `footer_note_text` matni (ajratuvchi chiziqsiz).
 /// Matn bo'lmasa (`null`/bo'sh) `null` qaytadi — hech narsa chizilmaydi.
 Future<img.Image?> renderFooterImage(ReceiptSettings? settings) async {
-  final footerNotice = settings?.texts.footerNotice;
+  final footerNotice = settings?.footerNoteText;
   if (footerNotice == null || footerNotice.isEmpty) return null;
 
   final isCompact = settings?.spacing == 'compact';
@@ -467,16 +426,9 @@ Future<img.Image?> renderFooterImage(ReceiptSettings? settings) async {
     textDirection: TextDirection.ltr,
   )..layout(maxWidth: _printWidth);
 
-  final totalHeight = gap + 2 + gap + painter.height + bottomPadding;
+  final totalHeight = gap + painter.height + bottomPadding;
 
   return _rasterize(totalHeight, (canvas) {
-    canvas.drawRect(
-      Rect.fromLTWH(0, gap, _printWidth, 2),
-      Paint()..color = const Color(0xFF000000),
-    );
-    painter.paint(
-      canvas,
-      Offset((_printWidth - painter.width) / 2, gap + 2 + gap),
-    );
+    painter.paint(canvas, Offset((_printWidth - painter.width) / 2, gap));
   });
 }

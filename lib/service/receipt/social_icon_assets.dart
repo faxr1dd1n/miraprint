@@ -15,6 +15,8 @@ const socialIconAssets = {
 const fallbackSocialIconFile = 'telegram.svg';
 
 String socialIconAssetPath(String icon) {
-  final file = socialIconAssets[icon.toLowerCase()] ?? fallbackSocialIconFile;
+  // Backend ikonkalari "tio-instagram" ko'rinishida keladi.
+  final name = icon.toLowerCase().replaceFirst('tio-', '');
+  final file = socialIconAssets[name] ?? fallbackSocialIconFile;
   return 'assets/social_media/$file';
 }
