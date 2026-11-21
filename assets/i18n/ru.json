@@ -1,148 +1,65 @@
 {
+  "app": {
+    "title": "Miraprint v{version}",
+    "subtitle": "Мост для чековых принтеров и терминала ERA"
+  },
+  "common": {
+    "refresh": "Обновить",
+    "cancel": "Отмена",
+    "continue": "Продолжить",
+    "sending": "Отправка...",
+    "downloading": "Загрузка..."
+  },
+  "language": {
+    "label": "Язык"
+  },
+  "server_status": {
+    "title": "Статус сервера",
+    "waiting": "Ожидание",
+    "starting": "Запускается...",
+    "running": "Работает",
+    "error": "Ошибка",
+    "hint_starting": "Подождите несколько секунд",
+    "hint_ok": "Связь с сайтом Mirasoft готова (принтер и терминал)",
+    "printer_name": "Сервер принтера",
+    "arca_name": "Сервер Arca",
+    "port_busy": "порт {port} занят (другая программа или копия приложения)",
+    "stopped": "сервер остановился",
+    "arca_desc": "Сайт ↔ терминал ERA",
+    "printer_desc": "Сайт → чековый принтер",
+    "hint_error": "Приложение работает не полностью — проверьте сервер ниже"
+  },
   "printer": {
-    "name": "Printer_POS_80",
-    "vendorId": "",
-    "productId": ""
+    "title": "Принтер",
+    "not_found": "Принтер не найден",
+    "test_print": "Тестовая печать",
+    "custom_test_print": "Свой тест-печать",
+    "custom_dialog_title": "Введите свой JSON",
+    "custom_dialog_hint": "Вставьте сюда JSON тела чека...",
+    "custom_send": "Печать",
+    "custom_cancel": "Отмена",
+    "custom_invalid_json": "Неверный JSON: {error}",
+    "sent_success": "Отправлено на принтер {name}",
+    "offline": "не подключен"
   },
-  "check": {
-    "headers": [
-      {
-        "title": "Дата",
-        "val": "21.11.2026, 11:51:08"
-      },
-      {
-        "title": "Филиал",
-        "val": "Malika"
-      },
-      {
-        "title": "Кассир",
-        "val": "Malika Minor Somsa"
-      },
-      {
-        "title": "Сотрудник",
-        "val": "Malika Minor Somsa"
-      },
-      {
-        "title": "Контакты",
-        "val": "998977341370"
-      },
-      {
-        "title": "Клиент",
-        "val": "POS Sovda"
-      },
-      {
-        "title": "Тип клиента",
-        "val": "HoReCa"
-      },
-      {
-        "title": "Способ оплаты",
-        "val": "Наличный"
-      },
-      {
-        "title": "Адрес",
-        "val": "Minor"
-      }
-    ],
-    "items": [
-      {
-        "name": "Kartoshka Somsa",
-        "qty": 1,
-        "price": "8 000.00 сўм",
-        "total_price": "8 000.00 сўм"
-      }
-    ],
-    "totals": [
-      {
-        "title": "Итого",
-        "val": "8 000.00 сўм",
-        "big": true
-      },
-      {
-        "title": "Безналичный",
-        "val": "8 000.00 сўм",
-        "light": true
-      }
-    ],
-    "socials": [
-      {
-        "title": "minorsomsa.uz",
-        "icon": "tio-instagram"
-      }
-    ],
-    "logo": "https://onebuy1.s3.eu-central-003.backblazeb2.com/minorsomsa/company/file_6a2935f0127d80.39911358.jpg",
-    "barcode": "",
-    "current_number": "70"
+  "update": {
+    "title": "Доступно обновление",
+    "check_button": "Проверить обновления",
+    "no_update_found": "Обновлений нет, установлена последняя версия",
+    "new_version": "Новая версия: {version}",
+    "update_button": "Обновить",
+    "downloaded_title": "Загружено",
+    "downloaded_body": "Нажмите кнопку ниже, чтобы продолжить. Откроется Finder — перетащите Miraprint в папку Applications, затем откройте его заново. Приложение сейчас закроется.",
+    "progress_of": "{received} МБ / {total} МБ",
+    "progress_downloaded": "{received} МБ загружено",
+    "check_short": "Обновления"
   },
-  "check_settings": {
-    "headers": [
-      {
-        "title": "Дата",
-        "val": "21.11.2026, 11:51:08"
-      },
-      {
-        "title": "Филиал",
-        "val": "Malika"
-      },
-      {
-        "title": "Кассир",
-        "val": "Malika Minor Somsa"
-      },
-      {
-        "title": "Сотрудник",
-        "val": "Malika Minor Somsa"
-      },
-      {
-        "title": "Контакты",
-        "val": "998977341370"
-      },
-      {
-        "title": "Клиент",
-        "val": "POS Sovda"
-      },
-      {
-        "title": "Тип клиента",
-        "val": "HoReCa"
-      },
-      {
-        "title": "Способ оплаты",
-        "val": "Наличный"
-      },
-      {
-        "title": "Адрес",
-        "val": "Minor"
-      }
-    ],
-    "items": [
-      {
-        "name": "Kartoshka Somsa",
-        "qty": 1,
-        "price": "8 000.00 сўм",
-        "total_price": "8 000.00 сўм"
-      }
-    ],
-    "totals": [
-      {
-        "title": "Итого",
-        "val": "8 000.00 сўм",
-        "big": true
-      },
-      {
-        "title": "Безналичный",
-        "val": "8 000.00 сўм",
-        "light": true
-      }
-    ],
-    "socials": [
-      {
-        "title": "minorsomsa.uz",
-        "icon": "tio-instagram"
-      }
-    ],
-    "logo": "https://onebuy1.s3.eu-central-003.backblazeb2.com/minorsomsa/company/file_6a2935f0127d80.39911358.jpg",
-    "barcode": "",
-    "current_number": "70",
-    "spacing": "normal",
-    "fields_layout": "space-between",
-    "footer_note_text": "Footer text"
+  "arca": {
+    "requests": "Запросы",
+    "last_request": "Последнее обращение",
+    "copy": "Копировать"
+  },
+  "footer": {
+    "tray_hint": "Если закрыть окно, приложение продолжит работать в трее."
   }
 }
