@@ -46,3 +46,7 @@ app.*.map.json
 
 # Code signing material (private key, CSR) — never commit
 /miraprint_signing/
+
+# CI yuklab oladi (build-windows.yml), repoga qo'shilmaydi
+windows/installer/vc_redist.x64.exe
+windows/installer/Output/

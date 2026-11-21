@@ -27,12 +27,16 @@ RestartApplications=yes
 
 [Files]
 Source: "..\..\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Visual C++ Runtime (VCRUNTIME140.dll): toza Windows'da yo'q bo'lishi mumkin
+Source: "vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 
 [Run]
+; VC++ Runtime BIRINCHI o'rnatiladi: pastdagi `miraprint.exe --generate-cert` ham unga tayanadi
+Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Visual C++ Runtime o'rnatilmoqda..."; Check: VCRedistNeedsInstall; Flags: waituntilterminated
 ; Arca: 1) shu kompyuter uchun 127.0.0.1 sertifikatini yaratish (mavjud bo'lsa, qayta yaratilmaydi)
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--generate-cert ""{#CertDir}"""; StatusMsg: "Xavfsiz ulanish sertifikati yaratilmoqda..."; Flags: runhidden waituntilterminated
 ; Arca: 2) sertifikatni Windows Trusted Root ro'yxatiga o'rnatish (Chrome/Edge shunga ishonadi)
@@ -45,3 +49,14 @@ Filename: "{sys}\certutil.exe"; Parameters: "-delstore Root ""127.0.0.1"""; Flag
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{commonappdata}\MirasoftArca"
+
+[Code]
+function VCRedistNeedsInstall: Boolean;
+var
+  Installed: Cardinal;
+begin
+  Result := not (
+    RegQueryDWordValue(HKLM,
+      'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64',
+      'Installed', Installed) and (Installed = 1));
+end;

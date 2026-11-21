@@ -30,6 +30,9 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup -y
 
+      - name: Download VC++ Redistributable
+        run: Invoke-WebRequest https://aka.ms/vs/17/release/vc_redist.x64.exe -OutFile windows\installer\vc_redist.x64.exe
+
       - name: Build installer
         run: iscc /DMyAppVersion=${{ env.APP_VERSION }} windows\installer\miraprint.iss
 
