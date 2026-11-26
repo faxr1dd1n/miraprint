@@ -46,10 +46,12 @@
     "title": "Update available",
     "check_button": "Check for updates",
     "no_update_found": "No update available, you're on the latest version",
+    "check_failed": "Couldn't check for updates. Check your internet connection",
     "new_version": "New version: {version}",
     "update_button": "Update",
     "downloaded_title": "Downloaded",
     "downloaded_body": "Click the button below to continue. Finder will open — drag Miraprint into the Applications folder, then reopen it. This app will now close.",
+    "downloaded_body_windows": "Press Continue. Miraprint will close and the installer will open. When setup finishes, start the app again.",
     "progress_of": "{received} MB / {total} MB",
     "progress_downloaded": "{received} MB downloaded",
     "check_short": "Updates"

@@ -278,6 +278,21 @@ JSON kontrakt eski C# ilova (`MainForm.cs`, 845-895 va 243-264-qatorlar) bilan *
   4. `sha256` tekshiruvi: `UpdateInfo`ga maydon qo'shish, yuklangan faylni ishga tushirishdan oldin solishtirish.
   5. Windows'da to'liq sinov: eski versiya → yangi release → ilova orqali yangilash → qayta ochilishini tekshirish.
 
+### Bosqich 16 — Windows'da `CERTIFICATE_VERIFY_FAILED` (1.0.24)
+
+- **Muammo (2026-11-26, haqiqiy Windows'da topildi):** o'rnatilgan `1.0.22` yangilanishni topmadi va "yangilanish yo'q" dedi. Logda: `HandshakeException ... CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate`.
+- **Ehtimoliy sabab:** Windows ildiz sertifikatlarni kerak bo'lganda, o'z TLS tizimi (SChannel) orqali yuklab oladi. Dart (BoringSSL) Windows'da bor sertifikatlarni o'qiydi, yo'g'ini yuklatmaydi.
+- **Tekshiruv:** PowerShell orqali GitHub'ning ikkala serveriga ulanib (sertifikatlar Sectigo va Let's Encrypt'niki, almashtirish ko'rinmadi), ilova qayta ochilgach yangilanish topildi.
+- **Qaror:** Mozilla'ning to'liq ildiz sertifikatlar to'plami (`cacert.pem`, curl.se) ilova ichiga qo'shiladi va ishga tushishda `SecurityContext.defaultContext`ga yuklanadi. Windows'dagi sertifikatlar ham ishlayveradi.
+- **Qilinmaydi:** `badCertificateCallback => true` (tekshiruvni o'chiradi; `sha256` ham shu kanaldan kelgani uchun fayl va hash birga almashtirilishi mumkin, o'rnatuvchi esa admin huquqi bilan ishlaydi).
+- **Parvarish:** to'plam eskiradi, vaqti-vaqti bilan yangi `cacert.pem` bilan almashtiriladi.
+- **Qadamlar:**
+  1. `cacert.pem`ni `assets/certs/`ga yuklash, `pubspec.yaml`ga qo'shish.
+  2. `lib/core/`da yuklash funksiyasi, `main.dart`da update tekshiruvidan oldin chaqirish. Xato bo'lsa logga yoziladi, ilova baribir ishga tushadi.
+  3. Tekshiruv xatosini "yangilanish yo'q"dan ajratish (uz, ru, en).
+  4. Toza Windows'da (PowerShell buyrug'isiz) sinash.
+- **Eslatma:** `1.0.22` va `1.0.23`da bu tuzatish yo'q; muammo chiqqan kompyuterga `1.0.24` bir marta qo'lda o'rnatiladi.
+
 ## 6. Ish uslubi
 
 - Har bosqich kichik va real (toy misollar yo'q) — to'g'ridan-to'g'ri yakuniy kodning bir qismi.

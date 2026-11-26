@@ -46,10 +46,12 @@
     "title": "Yangilanish mavjud",
     "check_button": "Yangilanishni tekshirish",
     "no_update_found": "Yangilanish yo'q, joriy versiya eng so'nggisi",
+    "check_failed": "Yangilanishni tekshirib bo'lmadi. Internet ulanishini tekshiring",
     "new_version": "Yangi versiya: {version}",
     "update_button": "Yangilash",
     "downloaded_title": "Yuklab olindi",
     "downloaded_body": "Davom etish uchun quyidagi tugmani bosing. Finder ochiladi — Miraprint'ni Applications papkasiga torting, so'ng uni qayta oching. Bu ilova hozir yopiladi.",
+    "downloaded_body_windows": "Davom etish tugmasini bosing. Miraprint yopiladi va o'rnatuvchi ochiladi. O'rnatish tugagach, ilovani qayta ishga tushiring.",
     "progress_of": "{received} MB / {total} MB",
     "progress_downloaded": "{received} MB yuklandi",
     "check_short": "Yangilanish"

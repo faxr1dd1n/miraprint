@@ -39,12 +39,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> onCheckUpdatePressed() async {
-    final found = await updateController.checkNow();
-    if (!found && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(translate('update.no_update_found'))),
-      );
-    }
+    final result = await updateController.checkNow();
+    if (!mounted) return;
+
+    final messageKey = switch (result) {
+      UpdateCheckResult.available => null,
+      UpdateCheckResult.upToDate => 'update.no_update_found',
+      UpdateCheckResult.failed => 'update.check_failed',
+    };
+    if (messageKey == null) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(translate(messageKey))),
+    );
   }
 
   @override

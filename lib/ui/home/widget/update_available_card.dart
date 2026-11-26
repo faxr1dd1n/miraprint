@@ -57,7 +57,13 @@ class _UpdateAvailableCardState extends State<UpdateAvailableCard> {
           barrierDismissible: false,
           builder: (context) => AlertDialog(
             title: Text(translate('update.downloaded_title')),
-            content: Text(translate('update.downloaded_body')),
+            content: Text(
+              translate(
+                Platform.isWindows
+                    ? 'update.downloaded_body_windows'
+                    : 'update.downloaded_body',
+              ),
+            ),
             actions: [
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(),

@@ -5,6 +5,8 @@ import 'package:miraprint/core/app_logger.dart';
 import 'package:miraprint/model/update/update_info.dart';
 import 'package:miraprint/service/update/update_checker.dart';
 
+enum UpdateCheckResult { available, upToDate, failed }
+
 /// Update tekshiruvini bitta joyda jamlaydi — AppBar tugmasi va
 /// `UpdateAvailableCard` shu bitta natijani (`info`) ko'radi, ikkalasi ham
 /// o'z-o'zicha alohida so'rov yubormaydi.
@@ -24,11 +26,11 @@ class UpdateController extends ChangeNotifier {
     _timer = Timer.periodic(_checkInterval, (_) => checkNow());
   }
 
-  /// AppBar tugmasi va davriy timer ikkalasi ham shuni chaqiradi.
-  /// Qaytadi: yangilanish topildimi (tugma bosilganda foydalanuvchiga
-  /// "yangilanish yo'q" xabarini ko'rsatish uchun kerak).
-  Future<bool> checkNow() async {
-    if (_isChecking) return _info != null;
+  /// AppBar tugmasi va davriy timer ikkalasi ham shuni chaqiradi. Natija
+  /// tugma bosilganda foydalanuvchiga to'g'ri xabar ko'rsatish uchun kerak:
+  /// tekshiruv xatosi "yangilanish yo'q" degani emas.
+  Future<UpdateCheckResult> checkNow() async {
+    if (_isChecking) return _currentResult;
 
     _isChecking = true;
     notifyListeners();
@@ -41,16 +43,20 @@ class UpdateController extends ChangeNotifier {
             : '[UPDATE] ${result.version} mavjud (${result.downloadUrl})',
       );
       _info = result;
-      return result != null;
+      return _currentResult;
     } catch (e) {
-      // Tarmoq xatosi allaqachon checkForUpdate() ichida [UPDATE] tegi
-      // bilan batafsil loglangan — bu yerda qayta loglash shart emas.
-      return _info != null;
+      // `_info` o'zgarmaydi — avval topilgan yangilanish kartasi yo'qolmaydi.
+      appLogger.warning('[UPDATE] Tekshirib bo\'lmadi: $e');
+      return UpdateCheckResult.failed;
     } finally {
       _isChecking = false;
       notifyListeners();
     }
   }
+
+  UpdateCheckResult get _currentResult => _info == null
+      ? UpdateCheckResult.upToDate
+      : UpdateCheckResult.available;
 
   @override
   void dispose() {

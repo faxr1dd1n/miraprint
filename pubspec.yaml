@@ -1,7 +1,7 @@
 name: miraprint
 description: "A new Flutter project."
 publish_to: 'none' 
-version: 1.0.23+25
+version: 1.0.24+26
 
 environment:
   sdk: ^3.10.4
@@ -72,6 +72,7 @@ flutter:
     - assets/tray_icon.ico
     - assets/social_media/
     - assets/i18n/
+    - assets/certs/cacert.pem
 
   # fonts:
   #   - family: Schyler

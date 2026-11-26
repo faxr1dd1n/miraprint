@@ -38,7 +38,9 @@ Future<UpdateInfo?> checkForUpdate() async {
     '${stopwatch.elapsedMilliseconds}ms',
   );
 
-  if (response.statusCode != 200) return null;
+  if (response.statusCode != 200) {
+    throw HttpException('HTTP ${response.statusCode}', uri: uri);
+  }
 
   final json = jsonDecode(response.body) as Map<String, dynamic>;
   final platformKey = Platform.isMacOS ? 'macos' : 'windows';

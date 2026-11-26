@@ -8,6 +8,7 @@ import 'package:miraprint/bloc/arca_bloc/arca_bloc.dart';
 import 'package:miraprint/bloc/server_bloc/server_bloc.dart';
 import 'package:miraprint/core/app_logger.dart';
 import 'package:miraprint/core/app_theme.dart';
+import 'package:miraprint/core/trusted_certificates.dart';
 import 'package:miraprint/service/arca/arca_bridge_server.dart';
 import 'package:miraprint/service/arca/certificate_service.dart';
 import 'package:miraprint/service/locale/locale_service.dart';
@@ -31,6 +32,7 @@ void main(List<String> args) async {
   }
 
   await setupLogging();
+  await loadTrustedCertificates();
 
   final localizationDelegate = await createLocalizationDelegate();
 
