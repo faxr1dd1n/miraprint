@@ -3,7 +3,10 @@ name: Build Windows
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: write
 
 jobs:
   build-windows:
@@ -23,6 +26,13 @@ jobs:
           echo "APP_VERSION=$semVer" >> $env:GITHUB_ENV
           "const String kAppVersion = '$semVer';" | Out-File -FilePath lib/core/app_version.dart -Encoding utf8
 
+      - name: Check tag matches pubspec version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          if ($env:GITHUB_REF_NAME -ne "v$env:APP_VERSION") {
+            throw "Tag $env:GITHUB_REF_NAME, pubspec esa $env:APP_VERSION"
+          }
+
       - run: flutter pub get
 
       - run: flutter build windows --release
@@ -40,3 +50,22 @@ jobs:
         with:
           name: miraprint-windows-installer
           path: windows/installer/Output/MiraprintSetup.exe
+
+      - name: Create version.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          $exe = "windows/installer/Output/MiraprintSetup.exe"
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+          @{
+            windows = @{
+              version      = $env:APP_VERSION
+              download_url = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$env:GITHUB_REF_NAME/MiraprintSetup.exe"
+              sha256       = $hash
+            }
+          } | ConvertTo-Json -Depth 3 | Set-Content version.json -Encoding utf8
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create $env:GITHUB_REF_NAME windows/installer/Output/MiraprintSetup.exe version.json --title "Miraprint $env:APP_VERSION" --generate-notes

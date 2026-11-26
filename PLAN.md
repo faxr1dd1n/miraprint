@@ -264,6 +264,20 @@ JSON kontrakt eski C# ilova (`MainForm.cs`, 845-895 va 243-264-qatorlar) bilan *
 - **Saqlash:** `shared_preferences` (onebuy'dagi kabi), tanlangan til kaliti.
 - **Qadamlar:** 1) `pubspec.yaml`ga `flutter_translate`, `shared_preferences` va `assets/i18n/` qo'shish; 2) JSON tarjima fayllari; 3) `main.dart`da `LocalizationDelegate`/`LocalizedApp` ulash; 4) `lib/service/locale/` — saqlash + `ValueNotifier` servisi; 5) barcha qattiq matnlarni `translate('...')`ga almashtirish; 6) til tanlash UI (masalan `home_screen.dart` app bar'ida).
 
+### Bosqich 15 — Avtomatik yangilanish (GitHub Releases)
+
+- **Muammo:** `kUpdateServerUrl` hozir lokal test manzili (`http://192.168.1.4:8080`), do'konlardagi kompyuterlar unga ulana olmaydi.
+- **Qaror:** fayllar GitHub Releases'da turadi. Repo public, shuning uchun ilovaga token kerak emas.
+- **Manzil:** `https://github.com/faxr1dd1n/miraprint/releases/latest/download/version.json`
+- **Oqim:** `pubspec.yaml`da versiya oshiriladi → `v*` tag push qilinadi → Actions build qiladi → `MiraprintSetup.exe` va `version.json` Release'ga joylanadi → ilova yangi versiyani topib, yuklab o'rnatadi.
+- **Qamrov:** hozircha faqat Windows. macOS keyinroq.
+- **Qadamlar:**
+  1. `build-windows.yml`: tag trigger, tag va pubspec versiyasini solishtirish, `version.json` (`sha256` bilan), release yaratish.
+  2. Birinchi release'ni chiqarib, `version.json` manzili ochilishini tekshirish.
+  3. `kUpdateServerUrl`ni GitHub manziliga almashtirish.
+  4. `sha256` tekshiruvi: `UpdateInfo`ga maydon qo'shish, yuklangan faylni ishga tushirishdan oldin solishtirish.
+  5. Windows'da to'liq sinov: eski versiya → yangi release → ilova orqali yangilash → qayta ochilishini tekshirish.
+
 ## 6. Ish uslubi
 
 - Har bosqich kichik va real (toy misollar yo'q) — to'g'ridan-to'g'ri yakuniy kodning bir qismi.
@@ -273,5 +287,4 @@ JSON kontrakt eski C# ilova (`MainForm.cs`, 845-895 va 243-264-qatorlar) bilan *
 ## 7. Ochiq savollar (keyinroq hal qilinadi)
 
 - Windows'da eski C# app bilan portlar/joylar to'qnashmasligi (ikkalasi ham 49153 ishlatadi — bir vaqtda ishlamasligi kerak).
-- Avtomatik yangilanish mexanizmi (bu loyihaning asosiy maqsadi — qanday amalga oshirilishi alohida muhokama qilinadi).
 - Tarmoq orqali ulanadigan printerlar qo'shilsa, `PrinterConnection` interfeysiga yangi implementatsiya qo'shiladi, xolos.
