@@ -46,7 +46,11 @@ Future<UpdateInfo?> checkForUpdate() async {
   if (platformJson == null) return null;
 
   final info = UpdateInfo.fromJson(platformJson);
-  if (info.version.isEmpty || info.downloadUrl.isEmpty) return null;
+  if (info.version.isEmpty ||
+      info.downloadUrl.isEmpty ||
+      info.sha256.isEmpty) {
+    return null;
+  }
 
   if (_isNewer(info.version, kAppVersion)) {
     return info;

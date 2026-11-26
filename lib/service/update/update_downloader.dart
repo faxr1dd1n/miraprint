@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
@@ -18,13 +19,22 @@ class UpdateCancelledException implements Exception {
   String toString() => 'Yuklab olish bekor qilindi';
 }
 
+class UpdateChecksumException implements Exception {
+  @override
+  String toString() =>
+      'Yuklangan fayl tekshiruvdan o\'tmadi (SHA-256 mos kelmadi)';
+}
+
 /// Installer'ni stream orqali yuklab oladi (butun faylni xotiraga
 /// bufferlamaydi) va har chunk'da `onProgress(received, total)` chaqiradi —
 /// `total` server `Content-Length` bermasa `0` bo'ladi (UI aniqmas
 /// progress-bar ko'rsatishi kerak). Ulanish 15 soniya ichida boshlanmasa
 /// yoki oqim 20 soniyadan ortiq to'xtab qolsa (stall), xato tashlaydi.
+/// Yuklab bo'lgach fayl hash'i `expectedSha256` bilan solishtiriladi, mos
+/// kelmasa `UpdateChecksumException` tashlanadi va fayl o'chiriladi.
 Future<String> downloadInstaller(
   String url, {
+  required String expectedSha256,
   void Function(int received, int total)? onProgress,
   UpdateCancelToken? cancelToken,
 }) async {
@@ -73,6 +83,11 @@ Future<String> downloadInstaller(
 
     if (cancelToken?.isCancelled ?? false) {
       throw UpdateCancelledException();
+    }
+
+    final digest = await sha256.bind(file.openRead()).first;
+    if (digest.toString() != expectedSha256) {
+      throw UpdateChecksumException();
     }
 
     return filePath;

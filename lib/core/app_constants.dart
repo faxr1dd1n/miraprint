@@ -1,7 +1,9 @@
 const int kHttpPort = 49153;
 
-// TEST: pastdagi IP'ni Mac'ingizning LAN IP manziliga almashtiring (ipconfig getifaddr en0)
-const String kUpdateServerUrl = 'http://192.168.1.4:8080';
+/// Yangilanish fayllari GitHub Releases'da turadi. `latest` doim eng oxirgi
+/// release'ga yo'naltiradi. `/version.json` qismini `checkForUpdate()` qo'shadi.
+const String kUpdateServerUrl =
+    'https://github.com/faxr1dd1n/miraprint/releases/latest/download';
 
 // ───────────── Arca (ERA terminal ko'prigi) ─────────────
 

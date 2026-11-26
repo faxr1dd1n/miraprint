@@ -37,6 +37,7 @@ class _UpdateAvailableCardState extends State<UpdateAvailableCard> {
     try {
       final filePath = await downloadInstaller(
         info.downloadUrl,
+        expectedSha256: info.sha256,
         cancelToken: cancelToken,
         onProgress: (received, total) {
           if (!mounted) return;
